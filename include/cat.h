@@ -1,0 +1,9 @@
+#define CAT_MODE_LSB		0x00
+#define CAT_MODE_USB		0x01
+#define CAT_MODE_CW			0x02
+#define CAT_MODE_CWR		0x03
+#define CAT_MODE_AM			0x04
+#define CAT_MODE_FM			0x08
+#define CAT_MODE_DIG		0x0A
+#define CAT_MODE_PKT		0x0C
+#define CAT_MODE_FMN		0x88
