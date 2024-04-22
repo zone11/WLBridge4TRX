@@ -9,7 +9,7 @@ String wl_mode = "SSB";
 
 unsigned long last_millis = 0;
 
-void send() {
+void sendToWavelog(boolean useSSL) {
  WiFiClientSecure *client = new WiFiClientSecure;
     if(client) {
       client -> setCACert(wl_rootCACertificate);
@@ -19,7 +19,7 @@ void send() {
       Serial.print("[HTTPS] Start...\n");
       if (https.begin(*client, wl_url)) {
 
-        // Header for JSON and payload for wavelog
+        // Prepare header for JSON and add the payload for Wavelog
         https.addHeader("Content-Type", "application/json");
         String RequestData = "{\"key\":\"" + wl_token + "\",\"radio\":\"" + wl_radio + "\",\"frequency\":\"" + String(wl_qrg) + "\",\"mode\":\"" + wl_mode + "\"}";
 
@@ -42,22 +42,30 @@ void send() {
     }
 }
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println();
-
+void initWiFi() {
+  // Init WifiManager
   WiFiManager wm;
-  
-  bool res;
-  res = wm.autoConnect("Yaesu2Wavelog");
+  wm.setDebugOutput(false);
 
-  if(!res) {
-      Serial.println("[WIFI] Failed to connect");
+  // Start AP if last WLAN is unavilable, restart if no valid configuration is provided.
+  if(!wm.autoConnect("Yaesu2Wavelog")) {
+      Serial.println("[WIFI] Failed to connect, reboot!");
       ESP.restart();
+      delay(1000);
   } 
   else {
       Serial.println("[WIFI] Connected! Let's talk to Wavelog :)");
   }
+}
+
+
+
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println();
+
+  initWiFi();
 }
 
 void loop() {
@@ -69,7 +77,7 @@ void loop() {
     Serial.print("[CAT] Mode: ");
     Serial.println(wl_mode);
 
-    send();
+    sendToWavelog(true);
    
     last_millis = millis();
   }
