@@ -3,11 +3,47 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <wavelog.h>
+#include <cat.h>
+
+String cat_buffer = ";";
+bool cat_get = false;
+unsigned long cat_qrg = 0;
+unsigned int cat_mode = 0;
+unsigned long cat_qrg_last = 0;
+unsigned int cat_mode_last = 0;
+
 
 unsigned long wl_qrg = 0;
 String wl_mode = "SSB";
 
 unsigned long last_millis = 0;
+
+
+
+bool catParseBuffer() {
+  //Serial.print("[CAT] Buffer: ");
+  //Serial.println(cat_buffer.length());
+
+  if (cat_buffer.length() > 1 ) {
+    int semiFirst = cat_buffer.indexOf(";");
+    int semiLast = cat_buffer.lastIndexOf(";");
+
+    // MODE
+    if((semiLast-semiFirst == 5)) {
+      cat_mode = cat_buffer.substring(4,5).toInt();
+      cat_buffer = ";";
+      return true;
+    }
+
+    // QRG
+    if((semiLast-semiFirst == 12)) {
+      cat_qrg = cat_buffer.substring(3,12).toInt();
+      cat_buffer = ";";
+      return true;
+    }
+  }
+  return false;
+}
 
 void sendToWavelog(boolean useSSL) {
  WiFiClientSecure *client = new WiFiClientSecure;
@@ -59,26 +95,51 @@ void initWiFi() {
 }
 
 
-
-
 void setup() {
   Serial.begin(115200);
   Serial.println();
 
+  Serial2.begin(9600);
   initWiFi();
 }
 
 void loop() {
-  if (millis() > (last_millis+5000)) {
-    wl_qrg = random(1600000,433000000);
-    Serial.print("[CAT] QRG: ");
-    Serial.println(wl_qrg);
+  // run every 500ms
+  if (millis() > (last_millis+250)) {
+    // Send CAT command
+    if(cat_get == false) {
+      Serial2.print("FA;");
+      cat_get = true;
+    } else {
+      Serial2.print("MD0;");
+      cat_get = false;
+    }
 
-    Serial.print("[CAT] Mode: ");
-    Serial.println(wl_mode);
+    // Parse CAT response 
+    if (catParseBuffer()) {
+      if ((cat_qrg != cat_qrg_last) || (cat_mode != cat_mode_last)) {
+        Serial.print("[CAT] QRG: ");
+        Serial.println(cat_qrg);
 
-    sendToWavelog(true);
-   
+        Serial.print("[CAT] Mode: ");
+        Serial.println(yaesuMode[cat_mode]);
+
+        wl_qrg = cat_qrg;
+        wl_mode = yaesuMode[cat_mode];
+
+        sendToWavelog(true);
+
+        cat_qrg_last = cat_qrg;
+        cat_mode_last = cat_mode;
+      } 
+   }
     last_millis = millis();
   }
+
+  if (Serial2.available()) {
+    cat_buffer += Serial2.readString();
+  }
+
+ 
+
 }
