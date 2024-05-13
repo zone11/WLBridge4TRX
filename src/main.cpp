@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -21,9 +22,6 @@ unsigned long last_millis = 0;
 
 
 bool catParseBuffer() {
-  //Serial.print("[CAT] Buffer: ");
-  //Serial.println(cat_buffer.length());
-
   if (cat_buffer.length() > 1 ) {
     int semiFirst = cat_buffer.indexOf(";");
     int semiLast = cat_buffer.lastIndexOf(";");
@@ -104,7 +102,6 @@ void setup() {
 }
 
 void loop() {
-  // run every 500ms
   if (millis() > (last_millis+250)) {
     // Send CAT command
     if(cat_get == false) {
