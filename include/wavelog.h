@@ -2,7 +2,7 @@
 
 String wl_url = "https://wavelog.hb9hjq.ch/api/radio";
 String wl_token = "wl65d74436bed67";
-String wl_radio = "Yaesu2Wavelog";
+String wl_radio = "YCAT2WL";
 
 const char* wl_rootCACertificate = "-----BEGIN CERTIFICATE-----\n" \
 "MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\n" \
