@@ -100,7 +100,8 @@ void webSiteHome() {}
 void webSiteUpdate() {}
 
 boolean resetPreferences() {
-  return false;
+    SPIFFS.format();  
+    return false;
 }
 
 boolean savePreferences() {
