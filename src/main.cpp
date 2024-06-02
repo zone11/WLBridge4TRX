@@ -3,6 +3,9 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <WebServer.h>
+#include <SPIFFS.h>
+#include <ESPmDNS.h>
 #include <wavelog.h>
 #include <cat.h>
 
@@ -13,12 +16,12 @@ unsigned int cat_mode = 0;
 unsigned long cat_qrg_last = 0;
 unsigned int cat_mode_last = 0;
 
-
 unsigned long wl_qrg = 0;
 String wl_mode = "SSB";
 
 unsigned long last_millis = 0;
 
+WebServer server(80);
 
 
 bool catParseBuffer() {
@@ -82,7 +85,7 @@ void initWiFi() {
   wm.setDebugOutput(false);
 
   // Start AP if last WLAN is unavilable, restart if no valid configuration is provided.
-  if(!wm.autoConnect("Yaesu2Wavelog")) {
+  if(!wm.autoConnect("YCAT2WL")) {
       Serial.println("[WIFI] Failed to connect, reboot!");
       ESP.restart();
       delay(1000);
@@ -92,13 +95,71 @@ void initWiFi() {
   }
 }
 
+void webSiteHome() {}
+
+void webSiteUpdate() {}
+
+boolean resetPreferences() {
+    SPIFFS.format();  
+    return false;
+}
+
+boolean savePreferences() {
+  return true;
+}
+
+boolean readPreferences() {
+  return false;
+}
+
+
 
 void setup() {
+  // Init Serial and Serial2
   Serial.begin(115200);
-  Serial.println();
-
   Serial2.begin(9600);
+
+  // Lets go!
+  delay(500);
+  Serial.println();
+  Serial.println("[YCAT2WL] lets go...");
+  
+  // Check SPIFFS
+  if (!SPIFFS.begin(true)) {
+    Serial.println("[SPIFFS] initialization failed!");
+    return;
+  }
+
+  // Read Wavelog settings from SPIFFS 
+  if (!readPreferences()) {
+    Serial.println("[SPIFFS] reading settings failed, back to default values.");
+    if (!resetPreferences()) {
+      Serial.println("[SPIFFS] even setting the default values failed!");
+      return;
+    }
+  } else {
+      Serial.println("[SPIFFS] reading settings went fine.");
+  }
+
+  // Lets start WIFI and the manager if required
   initWiFi();
+
+  // Spit out some Network informations
+
+
+  // Start local web server
+  server.on("/", webSiteHome);
+  server.on("/update", webSiteUpdate);
+  server.begin();
+  Serial.println("[HTTP] server started");
+
+  // Announce HTTP of this device using mDNS
+  if (!MDNS.begin("YCAT2WL")) {
+    Serial.println("[MDNS] Service failed!");
+  } else {
+    Serial.print("[MDNS] Service started");
+  }
+  MDNS.addService("http", "tcp", 80);
 }
 
 void loop() {
@@ -112,7 +173,7 @@ void loop() {
       cat_get = false;
     }
 
-    // Parse CAT response 
+    // Parse CAT response and send to Wavelog
     if (catParseBuffer()) {
       if ((cat_qrg != cat_qrg_last) || (cat_mode != cat_mode_last)) {
         Serial.print("[CAT] QRG: ");
@@ -137,6 +198,5 @@ void loop() {
     cat_buffer += Serial2.readString();
   }
 
- 
-
+  server.handleClient();
 }
