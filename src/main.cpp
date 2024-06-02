@@ -157,10 +157,9 @@ void setup() {
   if (!MDNS.begin("YCAT2WL")) {
     Serial.println("[MDNS] Service failed!");
   } else {
-    Serial.print("[MDNS] Service started.");
+    Serial.print("[MDNS] Service started");
   }
   MDNS.addService("http", "tcp", 80);
-
 }
 
 void loop() {
@@ -198,4 +197,6 @@ void loop() {
   if (Serial2.available()) {
     cat_buffer += Serial2.readString();
   }
+
+  server.handleClient();
 }
