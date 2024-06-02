@@ -95,9 +95,68 @@ void initWiFi() {
   }
 }
 
-void webSiteHome() {}
+void webSiteHome() {
+  String html = "<!DOCTYPE html>";
+  html += "<html>";
+  html += "<head>";
+  html += "<meta charset=\"UTF-8\">";
+  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+  html += "<title>YCAT2WL</title>";
+  html += "<style>";
+  html += "body { font-family: Arial, sans-serif; }";
+  html += ".container { max-width: 400px; margin: 0 auto; padding: 20px; }";
+  html += "input[type='text'] { width: 100%; padding: 10px; margin: 5px 0; }";
+  html += "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; }";
+  html += ".btn-reboot { width: 100%; padding: 10px; margin-top: 10px; background-color: #FF0000; color: white; border: none; }";
+  html += "input[type='submit']:hover { background-color: #45a049; }";
+  html += "</style>";
+  html += "</head>";
+  html += "<body>";
+  html += "<div class=\"container\">";
+  html += "<h1>YCAT2WL-Configuration</h1>";
+  html += "<form action='/update' method='post'>";
+  html += "<label for='wl_URL'>Wavelog URL:</label><br>";
+  html += "<input type='text' id='wl_URL' name='wl_URL' value='"+wl_url+"'><br>";
+  html += "<label for='wl_Token'>Wavelog Token:</label><br>";
+  html += "<input type='text' id='wl_Token' name='wl_Token' value='"+wl_token+"'><br>";
+  html += "<label for='wl_Radio'>Wavelog Radio Name:</label><br>";
+  html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+wl_radio+"'><br>";
+  html += "<input type='submit' value='Update'>";
+  html += "</form>";
+  html += "</div>";
+  html += "</body>";
+  html += "</html>";
 
-void webSiteUpdate() {}
+  server.send(200, "text/html", html);
+}
+
+void webSiteUpdate() {
+  String html = "<!DOCTYPE html>";
+  html += "<html>";
+  html += "<head>";
+  html += "<meta charset=\"UTF-8\">";
+  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+  html += "<title>YCAT2WL</title>";
+  html += "<style>";
+  html += "body { font-family: Arial, sans-serif; }";
+  html += ".container { max-width: 400px; margin: 0 auto; padding: 20px; }";
+  html += "input[type='text'] { width: 100%; padding: 10px; margin: 5px 0; }";
+  html += "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; }";
+  html += ".btn-reboot { width: 100%; padding: 10px; margin-top: 10px; background-color: #FF0000; color: white; border: none; }";
+  html += "input[type='submit']:hover { background-color: #45a049; }";
+  html += "</style>";
+  html += "</head>";
+  html += "<body>";
+  html += "<div class=\"container\">";
+  html += "<h1>YCAT2WL-Configuration</h1>";
+  html += "Settings saved, rebooting...";
+  html += "</div>";
+  html += "</body>";
+  html += "</html>";
+
+  server.send(200, "text/html", html);
+  ESP.restart();
+}
 
 boolean resetPreferences() {
     SPIFFS.format();  
@@ -135,7 +194,6 @@ void setup() {
     Serial.println("[SPIFFS] reading settings failed, back to default values.");
     if (!resetPreferences()) {
       Serial.println("[SPIFFS] even setting the default values failed!");
-      return;
     }
   } else {
       Serial.println("[SPIFFS] reading settings went fine.");
