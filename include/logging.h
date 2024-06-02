@@ -1,9 +1,8 @@
 #include <Arduino.h>
-
-#define LOGGING
+#include <config.h>
 
 void logging(String service, String message) {
-    #ifdef LOGGING
+    #if LOGGING_SERIAL == 1
       Serial.println("["+service+"] "+message);
     #endif
 }
