@@ -8,6 +8,7 @@
 #include <ESPmDNS.h>
 #include <wavelog.h>
 #include <cat.h>
+#include <logging.h>
 
 String cat_buffer = ";";
 bool cat_get = false;
@@ -86,12 +87,12 @@ void initWiFi() {
 
   // Start AP if last WLAN is unavilable, restart if no valid configuration is provided.
   if(!wm.autoConnect("YCAT2WL")) {
-      Serial.println("[WIFI] Failed to connect, reboot!");
+      logging("WIFI","Failed to connect, reboot!");
       ESP.restart();
       delay(1000);
   } 
   else {
-      Serial.println("[WIFI] Connected! Let's talk to Wavelog :)");
+      logging("WIFI","Connected! Let's talk to Wavelog :)");
   }
 }
 
@@ -159,7 +160,7 @@ void webSiteUpdate() {
 }
 
 boolean resetPreferences() {
-    SPIFFS.format();  
+    //SPIFFS.format();  
     return false;
 }
 
@@ -171,32 +172,30 @@ boolean readPreferences() {
   return false;
 }
 
-
-
 void setup() {
   // Init Serial and Serial2
   Serial.begin(115200);
   Serial2.begin(9600);
 
   // Lets go!
-  delay(500);
+  delay(2000);
   Serial.println();
-  Serial.println("[YCAT2WL] lets go...");
+  logging("YCAT2WL","lets go...");
   
   // Check SPIFFS
   if (!SPIFFS.begin(true)) {
-    Serial.println("[SPIFFS] initialization failed!");
+    logging("SPIFFS","initialization failed!");
     return;
   }
 
   // Read Wavelog settings from SPIFFS 
   if (!readPreferences()) {
-    Serial.println("[SPIFFS] reading settings failed, back to default values.");
+    logging("SPIFFS","reading settings failed, back to default values.");
     if (!resetPreferences()) {
-      Serial.println("[SPIFFS] even setting the default values failed!");
+      logging("SPIFFS", "even setting the default values failed!");
     }
   } else {
-      Serial.println("[SPIFFS] reading settings went fine.");
+      logging("SPIFFS","reading settings went fine");
   }
 
   // Lets start WIFI and the manager if required
@@ -209,13 +208,13 @@ void setup() {
   server.on("/", webSiteHome);
   server.on("/update", webSiteUpdate);
   server.begin();
-  Serial.println("[HTTP] server started");
+  logging("HTTP","Service started");
 
   // Announce HTTP of this device using mDNS
   if (!MDNS.begin("YCAT2WL")) {
-    Serial.println("[MDNS] Service failed!");
+    logging("MDNS","Service failed!");
   } else {
-    Serial.print("[MDNS] Service started");
+    logging("MDNS","Service started");
   }
   MDNS.addService("http", "tcp", 80);
 }
