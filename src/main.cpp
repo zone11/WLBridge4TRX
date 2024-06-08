@@ -156,7 +156,7 @@ void webSiteHome() {
   html += "<label for='wl_Radio'>Wavelog Radio Name:</label><br>";
   html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+wl_radio+"'><br>";
   html += "<label for='wl_rootCACertificate'>Wavelog CA Certificate</label><br>";
-  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate' rows='4' cols='50' >"+wl_rootCACertificate+"'</textarea><br>";
+  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate' rows='40' cols='80' >"+wl_rootCACertificate+"'</textarea><br>";
   html += "<input type='submit' value='Update'>";
   html += "</form>";
   html += "</div>";
