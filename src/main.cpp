@@ -47,39 +47,6 @@ bool catParseBuffer() {
   return false;
 }
 
-void sendToWavelog(boolean useSSL) {
- WiFiClientSecure *client = new WiFiClientSecure;
-    if(client) {
-      client -> setCACert(wl_rootCACertificate);
-
-      HTTPClient https;
-  
-      Serial.print("[HTTPS] Start...\n");
-      if (https.begin(*client, wl_url)) {
-
-        // Prepare header for JSON and add the payload for Wavelog
-        https.addHeader("Content-Type", "application/json");
-        String RequestData = "{\"key\":\"" + wl_token + "\",\"radio\":\"" + wl_radio + "\",\"frequency\":\"" + String(wl_qrg) + "\",\"mode\":\"" + wl_mode + "\"}";
-
-        int httpCode = https.POST(RequestData);
-        if (httpCode > 0) {
-          Serial.printf("[HTTPS] POST... OK! Code: %d\n", httpCode);
-        } else {
-          Serial.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
-        }
-
-        // End session
-        https.end();
-      } else {
-        Serial.printf("[HTTPS] Unable to connect\n");
-      }
-      
-      delete client;
-    } else {
-      Serial.println("Unable to create WifiClientSecure..");
-    }
-}
-
 void initWiFi() {
   // Init WifiManager
   WiFiManager wm;
