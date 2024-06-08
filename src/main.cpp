@@ -6,9 +6,10 @@
 #include <WebServer.h>
 #include <SPIFFS.h>
 #include <ESPmDNS.h>
+#include <logging.h>
 #include <wavelog.h>
 #include <cat.h>
-#include <logging.h>
+
 
 String cat_buffer = ";";
 bool cat_get = false;
@@ -209,7 +210,7 @@ void loop() {
         wl_qrg = cat_qrg;
         wl_mode = yaesuMode[cat_mode];
 
-        sendToWavelog(true);
+        sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_token,true);
 
         cat_qrg_last = cat_qrg;
         cat_mode_last = cat_mode;

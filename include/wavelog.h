@@ -1,9 +1,5 @@
 #include <Arduino.h>
 
-String wl_url = "https://wavelog.hb9hjq.ch/api/radio";
-String wl_token = "wl65d74436bed67";
-String wl_radio = "YCAT2WL";
-
 const char* wl_rootCACertificate = "-----BEGIN CERTIFICATE-----\n" \
 "MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw\n" \
 "TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh\n" \
@@ -36,35 +32,37 @@ const char* wl_rootCACertificate = "-----BEGIN CERTIFICATE-----\n" \
 "emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\n" \
 "-----END CERTIFICATE-----";
 
-void sendToWavelog(boolean useSSL) {
- WiFiClientSecure *client = new WiFiClientSecure;
-    if(client) {
-      client -> setCACert(wl_rootCACertificate);
+void sendToWavelog(unsigned long qrg, String mode, String radio, String token, boolean useSSL) {
 
-      HTTPClient https;
+  String RequestData = "{\"key\":\"" + token + "\",\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"}";
+
+  WiFiClientSecure *client = new WiFiClientSecure;
+  if(client) {
+    client -> setCACert(wl_rootCACertificate);
+
+    HTTPClient https;
   
-      Serial.print("[HTTPS] Start...\n");
-      if (https.begin(*client, wl_url)) {
+    Serial.print("[HTTPS] Start...\n");
+    if (https.begin(*client, wl_url)) {
 
-        // Prepare header for JSON and add the payload for Wavelog
-        https.addHeader("Content-Type", "application/json");
-        String RequestData = "{\"key\":\"" + wl_token + "\",\"radio\":\"" + wl_radio + "\",\"frequency\":\"" + String(wl_qrg) + "\",\"mode\":\"" + wl_mode + "\"}";
+      // Prepare header for JSON and add the payload for Wavelog
+      https.addHeader("Content-Type", "application/json");
 
-        int httpCode = https.POST(RequestData);
-        if (httpCode > 0) {
-          Serial.printf("[HTTPS] POST... OK! Code: %d\n", httpCode);
-        } else {
-          Serial.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
-        }
+      int httpCode = https.POST(RequestData);
+      if (httpCode > 0) {
+        logging("[HTTPS]","POST... OK!");
+      } else {
+        logging("[HTTPS]","POST... failed, error: "+String(https.errorToString(httpCode).c_str()));
+      }
 
         // End session
-        https.end();
-      } else {
-        Serial.printf("[HTTPS] Unable to connect\n");
-      }
-      
-      delete client;
+      https.end();
     } else {
-      Serial.println("Unable to create WifiClientSecure..");
+      logging("[HTTPS]","Unable to connect!");
     }
+      
+    delete client;
+  } else {
+    logging("HTTPS","Unable to create WifiClientSecure!");
+  }
 }
