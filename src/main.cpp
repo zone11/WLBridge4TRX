@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
-#include <HTTPClient.h>
-#include <WiFiClientSecure.h>
 #include <WebServer.h>
 #include <SPIFFS.h>
 #include <ESPmDNS.h>
@@ -20,6 +18,11 @@ unsigned int cat_mode_last = 0;
 
 unsigned long wl_qrg = 0;
 String wl_mode = "SSB";
+
+String wl_url = "https://wavelog.hb9hjq.ch/api/radio";
+String wl_token = "wl65d74436bed67";
+String wl_radio = "WLBridge4TRX";
+String wl_rootCACertificate = default_wl_rootCACertificate;
 
 unsigned long last_millis = 0;
 
@@ -54,10 +57,9 @@ void initWiFi() {
   wm.setDebugOutput(false);
 
   // Start AP if last WLAN is unavilable, restart if no valid configuration is provided.
-  if(!wm.autoConnect("YCAT2WL")) {
+  if(!wm.autoConnect("WLBridget4TRX")) {
       logging("WIFI","Failed to connect, reboot!");
       ESP.restart();
-      delay(1000);
   } 
   else {
       logging("WIFI","Connected! Let's talk to Wavelog :)");
@@ -70,19 +72,19 @@ void webSiteHome() {
   html += "<head>";
   html += "<meta charset=\"UTF-8\">";
   html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-  html += "<title>YCAT2WL</title>";
-  html += "<style>";
-  html += "body { font-family: Arial, sans-serif; }";
-  html += ".container { max-width: 400px; margin: 0 auto; padding: 20px; }";
-  html += "input[type='text'] { width: 100%; padding: 10px; margin: 5px 0; }";
-  html += "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; }";
-  html += ".btn-reboot { width: 100%; padding: 10px; margin-top: 10px; background-color: #FF0000; color: white; border: none; }";
-  html += "input[type='submit']:hover { background-color: #45a049; }";
-  html += "</style>";
+  html += "<title>WLBridget4TRX</title>";
+  // html += "<style>";
+  // html += "body { font-family: Arial, sans-serif; }";
+  // html += ".container { max-width: 400px; margin: 0 auto; padding: 20px; }";
+  // html += "input[type='text'] { width: 100%; padding: 10px; margin: 5px 0; }";
+  // html += "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; }";
+  // html += ".btn-reboot { width: 100%; padding: 10px; margin-top: 10px; background-color: #FF0000; color: white; border: none; }";
+  // html += "input[type='submit']:hover { background-color: #45a049; }";
+  // html += "</style>";
   html += "</head>";
   html += "<body>";
   html += "<div class=\"container\">";
-  html += "<h1>YCAT2WL-Configuration</h1>";
+  html += "<h1>WLBridget4TRX-Configuration</h1>";
   html += "<form action='/update' method='post'>";
   html += "<label for='wl_URL'>Wavelog URL:</label><br>";
   html += "<input type='text' id='wl_URL' name='wl_URL' value='"+wl_url+"'><br>";
@@ -90,6 +92,8 @@ void webSiteHome() {
   html += "<input type='text' id='wl_Token' name='wl_Token' value='"+wl_token+"'><br>";
   html += "<label for='wl_Radio'>Wavelog Radio Name:</label><br>";
   html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+wl_radio+"'><br>";
+  html += "<label for='wl_rootCACertificate'>Wavelog CA Certificate</label><br>";
+  html += "<input type='textarea' id='wl_rootCACertificate' name='wl_rootCACertificate' value='"+wl_rootCACertificate+"'><br>";
   html += "<input type='submit' value='Update'>";
   html += "</form>";
   html += "</div>";
@@ -105,19 +109,19 @@ void webSiteUpdate() {
   html += "<head>";
   html += "<meta charset=\"UTF-8\">";
   html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-  html += "<title>YCAT2WL</title>";
-  html += "<style>";
-  html += "body { font-family: Arial, sans-serif; }";
-  html += ".container { max-width: 400px; margin: 0 auto; padding: 20px; }";
-  html += "input[type='text'] { width: 100%; padding: 10px; margin: 5px 0; }";
-  html += "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; }";
-  html += ".btn-reboot { width: 100%; padding: 10px; margin-top: 10px; background-color: #FF0000; color: white; border: none; }";
-  html += "input[type='submit']:hover { background-color: #45a049; }";
-  html += "</style>";
+  html += "<title>WLBridget4TRX</title>";
+  // html += "<style>";
+  // html += "body { font-family: Arial, sans-serif; }";
+  // html += ".container { max-width: 400px; margin: 0 auto; padding: 20px; }";
+  // html += "input[type='text'] { width: 100%; padding: 10px; margin: 5px 0; }";
+  // html += "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; }";
+  // html += ".btn-reboot { width: 100%; padding: 10px; margin-top: 10px; background-color: #FF0000; color: white; border: none; }";
+  // html += "input[type='submit']:hover { background-color: #45a049; }";
+  // html += "</style>";
   html += "</head>";
   html += "<body>";
   html += "<div class=\"container\">";
-  html += "<h1>YCAT2WL-Configuration</h1>";
+  html += "<h1>WLBridget4TRX-Configuration</h1>";
   html += "Settings saved, rebooting...";
   html += "</div>";
   html += "</body>";
@@ -137,18 +141,18 @@ boolean savePreferences() {
 }
 
 boolean readPreferences() {
-  return false;
+  return true;
 }
 
 void setup() {
-  // Init Serial and Serial2
+  // Init Serial (Debug) and Serial2 (CAT)
   Serial.begin(115200);
   Serial2.begin(9600);
 
   // Lets go!
   delay(2000);
   Serial.println();
-  logging("YCAT2WL","lets go...");
+  logging("Main","Lets start!");
   
   // Check SPIFFS
   if (!SPIFFS.begin(true)) {
@@ -179,7 +183,7 @@ void setup() {
   logging("HTTP","Service started");
 
   // Announce HTTP of this device using mDNS
-  if (!MDNS.begin("YCAT2WL")) {
+  if (!MDNS.begin("WLBridget4TRX")) {
     logging("MDNS","Service failed!");
   } else {
     logging("MDNS","Service started");
@@ -201,16 +205,12 @@ void loop() {
     // Parse CAT response and send to Wavelog
     if (catParseBuffer()) {
       if ((cat_qrg != cat_qrg_last) || (cat_mode != cat_mode_last)) {
-        Serial.print("[CAT] QRG: ");
-        Serial.println(cat_qrg);
-
-        Serial.print("[CAT] Mode: ");
-        Serial.println(yaesuMode[cat_mode]);
-
         wl_qrg = cat_qrg;
         wl_mode = yaesuMode[cat_mode];
 
-        sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_token,true);
+        logging("CAT", "QRG: "+wl_qrg);
+        logging("CAT", "Mode: "+wl_mode);
+        sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_token, wl_url, wl_rootCACertificate);
 
         cat_qrg_last = cat_qrg;
         cat_mode_last = cat_mode;
