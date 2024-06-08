@@ -2,7 +2,7 @@
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <WebServer.h>
-#include <SPIFFS.h>
+#include <Effortless_SPIFFS.h>
 #include <ESPmDNS.h>
 #include <logging.h>
 #include <wavelog.h>
@@ -26,6 +26,7 @@ String wl_rootCACertificate = default_wl_rootCACertificate;
 
 unsigned long last_millis = 0;
 
+eSPIFFS fileSystem;
 WebServer server(80);
 
 
@@ -131,17 +132,36 @@ void webSiteUpdate() {
   ESP.restart();
 }
 
-boolean resetPreferences() {
-    //SPIFFS.format();  
-    return false;
-}
+boolean savePreferences(String url, String token, String radio, String caCert) {
+  String theSettingsRAW = "";
+  JsonDocument theSettings;
 
-boolean savePreferences() {
+  theSettings["url"] = url;
+  theSettings["token"] = token;
+  theSettings["radio"] = radio;
+  theSettings["caCert"] = caCert;
+  serializeJsonPretty(theSettings,Serial);
   return true;
 }
 
 boolean readPreferences() {
-  return true;
+  String theSettingsRAW = "";
+  JsonDocument theSettings;
+
+  if (fileSystem.openFromFile("/WLBridget4TRX.cfg", theSettingsRAW)) {
+    logging("eSPIFFS", "Configfile found");
+    deserializeJson(theSettings, theSettingsRAW);
+
+    return true;
+  } else {
+    logging("eSPIFFS", "no configuration found, lets create one with defaults");
+    if (savePreferences(default_wl_url, default_wl_token, default_wl_radio, default_wl_rootCACertificate) == true) {
+      return true;
+    } else {
+      logging("eSPIFFS", "Error creating a default configuration - Check SPIFFS parameters");
+      return false;
+    }
+  }
 }
 
 void setup() {
@@ -162,10 +182,7 @@ void setup() {
 
   // Read Wavelog settings from SPIFFS 
   if (!readPreferences()) {
-    logging("SPIFFS","reading settings failed, back to default values.");
-    if (!resetPreferences()) {
-      logging("SPIFFS", "even setting the default values failed!");
-    }
+    logging("eSPIFFS","reading settings failed, check details above");
   } else {
       logging("SPIFFS","reading settings went fine");
   }
