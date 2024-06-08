@@ -8,7 +8,13 @@
 #include <wavelog.h>
 #include <cat.h>
 
+// Configuration values 
+String wl_url ="";
+String wl_token = "";
+String wl_radio = "";
+String wl_rootCACertificate = "";
 
+// Variables for daily use
 String cat_buffer = ";";
 bool cat_get = false;
 unsigned long cat_qrg = 0;
@@ -18,17 +24,11 @@ unsigned int cat_mode_last = 0;
 
 unsigned long wl_qrg = 0;
 String wl_mode = "SSB";
-
-String wl_url = "https://wavelog.hb9hjq.ch/api/radio";
-String wl_token = "wl65d74436bed67";
-String wl_radio = "WLBridge4TRX";
-String wl_rootCACertificate = default_wl_rootCACertificate;
-
 unsigned long last_millis = 0;
 
+// Instances for eSPIFFS (Settings) and the webserver
 eSPIFFS fileSystem;
 WebServer server(80);
-
 
 bool catParseBuffer() {
   if (cat_buffer.length() > 1 ) {
@@ -67,6 +67,68 @@ void initWiFi() {
   }
 }
 
+boolean savePreferences(String url, String token, String radio, String caCert) {
+  String theSettingsRAW;
+  JsonDocument theSettings;
+
+  theSettings["url"] = url;
+  theSettings["token"] = token;
+  theSettings["radio"] = radio;
+  theSettings["caCert"] = caCert;
+  serializeJson(theSettings,theSettingsRAW);
+
+  if (fileSystem.saveFile("/WLBridget4TRX.cfg", theSettingsRAW.c_str())) {
+    logging("eSPIFFS","File written!");
+    return true;
+  } else {
+    logging("eSPIFFS","Error writing file!");
+    return false;
+  }
+}
+
+boolean readPreferences() {
+  String theSettingsRAW;
+  JsonDocument theSettings;
+
+  if (fileSystem.openFromFile("/WLBridget4TRX.cfg", theSettingsRAW)) {
+    logging("eSPIFFS", "Configfile found");
+    if (!deserializeJson(theSettings, theSettingsRAW)) {
+      String read_wl_url = theSettings["url"];
+      String read_wl_token = theSettings["token"];
+      String read_wl_radio = theSettings["radio"];
+      String read_wl_rootCACertificate = theSettings["caCert"];
+
+      wl_url = read_wl_url;
+      wl_token = read_wl_token;
+      wl_radio = read_wl_radio;
+      wl_rootCACertificate = read_wl_rootCACertificate;
+      
+      String wl_rootCACertificateDisplay = read_wl_rootCACertificate;
+      wl_rootCACertificateDisplay.replace("\n","\n\r");
+
+      logging("Prefs", "URL: "+wl_url);
+      logging("Prefs", "Token: "+wl_token);
+      logging("Prefs", "Radio: "+wl_radio);
+      logging("Prefs", "RootCA Cert: "+wl_rootCACertificateDisplay);
+      
+      return true;
+    } else {
+      logging("eSPIFFS","Deserialize JSON failed");
+      return false;
+    }
+  } else {
+    logging("eSPIFFS", "no configuration found, lets create one with defaults and reboot");
+    if (savePreferences(default_wl_url, default_wl_token, default_wl_radio, default_wl_rootCACertificate) == true) {
+      delay(2000);
+      ESP.restart();
+      return true;
+    } else {
+      logging("eSPIFFS", "Error creating a default configuration - Check SPIFFS parameters");
+      return false;
+    }
+  }
+}
+
 void webSiteHome() {
   String html = "<!DOCTYPE html>";
   html += "<html>";
@@ -94,7 +156,7 @@ void webSiteHome() {
   html += "<label for='wl_Radio'>Wavelog Radio Name:</label><br>";
   html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+wl_radio+"'><br>";
   html += "<label for='wl_rootCACertificate'>Wavelog CA Certificate</label><br>";
-  html += "<input type='textarea' id='wl_rootCACertificate' name='wl_rootCACertificate' value='"+wl_rootCACertificate+"'><br>";
+  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate' rows='4' cols='50' >"+wl_rootCACertificate+"'</textarea><br>";
   html += "<input type='submit' value='Update'>";
   html += "</form>";
   html += "</div>";
@@ -128,42 +190,19 @@ void webSiteUpdate() {
   html += "</body>";
   html += "</html>";
 
-  server.send(200, "text/html", html);
-  ESP.restart();
-}
+  wl_url = server.arg("wl_URL");
+  wl_token = server.arg("wl_Token");
+  wl_radio = server.arg("wl_Radio");
+  wl_rootCACertificate = server.arg("wl_rootCACertificate");
 
-boolean savePreferences(String url, String token, String radio, String caCert) {
-  String theSettingsRAW = "";
-  JsonDocument theSettings;
-
-  theSettings["url"] = url;
-  theSettings["token"] = token;
-  theSettings["radio"] = radio;
-  theSettings["caCert"] = caCert;
-  serializeJsonPretty(theSettings,Serial);
-  return true;
-}
-
-boolean readPreferences() {
-  String theSettingsRAW = "";
-  JsonDocument theSettings;
-
-  if (fileSystem.openFromFile("/WLBridget4TRX.cfg", theSettingsRAW)) {
-    logging("eSPIFFS", "Configfile found");
-    deserializeJson(theSettings, theSettingsRAW);
-
-    return true;
+  if (savePreferences(wl_url, wl_token, wl_radio, wl_rootCACertificate)) {
+    server.send(200, "text/html", html);
+    logging("HTTP","Saving config sucessfull, rebooting");
+    ESP.restart();
   } else {
-    logging("eSPIFFS", "no configuration found, lets create one with defaults");
-    if (savePreferences(default_wl_url, default_wl_token, default_wl_radio, default_wl_rootCACertificate) == true) {
-      return true;
-    } else {
-      logging("eSPIFFS", "Error creating a default configuration - Check SPIFFS parameters");
-      return false;
-    }
+    logging("HTTP", "Saving config failed!");
   }
 }
-
 void setup() {
   // Init Serial (Debug) and Serial2 (CAT)
   Serial.begin(115200);
@@ -182,9 +221,9 @@ void setup() {
 
   // Read Wavelog settings from SPIFFS 
   if (!readPreferences()) {
-    logging("eSPIFFS","reading settings failed, check details above");
+    logging("eSPIFFS","reading configuration failed, check details above");
   } else {
-      logging("SPIFFS","reading settings went fine");
+    logging("eSPIFFS","reading settings went fine");
   }
 
   // Lets start WIFI and the manager if required
