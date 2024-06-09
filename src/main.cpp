@@ -58,7 +58,7 @@ void initWiFi() {
   wm.setDebugOutput(false);
 
   // Start AP if last WLAN is unavilable, restart if no valid configuration is provided.
-  if(!wm.autoConnect("WLBridget4TRX")) {
+  if(!wm.autoConnect("WLBridge4TRX")) {
       logging("WIFI","Failed to connect, reboot!");
       ESP.restart();
   } 
@@ -77,7 +77,7 @@ boolean savePreferences(String url, String token, String radio, String caCert) {
   theSettings["caCert"] = caCert;
   serializeJson(theSettings,theSettingsRAW);
 
-  if (fileSystem.saveFile("/WLBridget4TRX.cfg", theSettingsRAW.c_str())) {
+  if (fileSystem.saveFile("/WLBridge4TRX.cfg", theSettingsRAW.c_str())) {
     logging("eSPIFFS","File written!");
     return true;
   } else {
@@ -90,7 +90,7 @@ boolean readPreferences() {
   String theSettingsRAW;
   JsonDocument theSettings;
 
-  if (fileSystem.openFromFile("/WLBridget4TRX.cfg", theSettingsRAW)) {
+  if (fileSystem.openFromFile("/WLBridge4TRX.cfg", theSettingsRAW)) {
     logging("eSPIFFS", "Configfile found");
     if (!deserializeJson(theSettings, theSettingsRAW)) {
       String read_wl_url = theSettings["url"];
@@ -135,7 +135,7 @@ void webSiteHome() {
   html += "<head>";
   html += "<meta charset=\"UTF-8\">";
   html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-  html += "<title>WLBridget4TRX</title>";
+  html += "<title>WLBridge4TRX</title>";
   html += "<style>";
   html += "body { font-family: Arial, sans-serif; }";
   html += ".main { max-width: 500px; margin: 0 auto; padding: 20px; }";
@@ -147,7 +147,7 @@ void webSiteHome() {
   html += "</head>";
   html += "<body>";
   html += "<div class=\"main\">";
-  html += "<h1>WLBridget4TRX-Configuration</h1>";
+  html += "<h1>WLBridge4TRX-Configuration</h1>";
   html += "<form action='/update' method='post'>";
   html += "<label for='wl_URL'>Wavelog URL:</label><br>";
   html += "<input type='text' id='wl_URL' name='wl_URL' value='"+wl_url+"'><br>";
@@ -172,7 +172,7 @@ void webSiteUpdate() {
   html += "<head>";
   html += "<meta charset=\"UTF-8\">";
   html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-  html += "<title>WLBridget4TRX</title>";
+  html += "<title>WLBridge4TRX</title>";
   html += "<style>";
   html += "body { font-family: Arial, sans-serif; }";
   html += ".main { max-width: 400px; margin: 0 auto; padding: 20px; }";
@@ -180,7 +180,7 @@ void webSiteUpdate() {
   html += "</head>";
   html += "<body>";
   html += "<div class=\"main\">";
-  html += "<h1>WLBridget4TRX-Configuration</h1>";
+  html += "<h1>WLBridge4TRX-Configuration</h1>";
   html += "Settings saved, rebooting...";
   html += "</div>";
   html += "</body>";
@@ -235,7 +235,7 @@ void setup() {
   logging("HTTP","Service started");
 
   // Announce HTTP of this device using mDNS
-  if (!MDNS.begin("WLBridget4TRX")) {
+  if (!MDNS.begin("WLBridge4TRX")) {
     logging("MDNS","Service failed!");
   } else {
     logging("MDNS","Service started");
