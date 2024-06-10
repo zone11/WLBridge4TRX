@@ -1,6 +1,6 @@
 # WLBridge4TRX
 A WIFI bridge to connect your radio directly to Wavelog using the official API.
-Yes, Cloudlog works also if you didn't upgrade yet..
+Cloudlog should also work, but is not tested. Consider switching to Wavelog ;)
 
 Serial console
 - Connect via USB at 15200,8,N,1
