@@ -63,7 +63,7 @@ void initWiFi() {
       ESP.restart();
   } 
   else {
-      logging("WIFI","Connected! Let's talk to Wavelog :)");
+      logging("WIFI","Connected! IP: "+WiFi.localIP().toString());
   }
 }
 
@@ -130,61 +130,64 @@ boolean readPreferences() {
 }
 
 void webSiteHome() {
-  String html = "<!DOCTYPE html>";
-  html += "<html>";
-  html += "<head>";
-  html += "<meta charset=\"UTF-8\">";
-  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-  html += "<title>WLBridge4TRX</title>";
-  html += "<style>";
-  html += "body { font-family: Arial, sans-serif; }";
-  html += ".main { max-width: 500px; margin: 0 auto; padding: 20px; }";
-  html += "input[type='text'] { width: 100%; padding: 10px; margin: 5px 0; }";
-  html += "input[type='submit'] { width: 100%; padding: 10px; margin-top: 10px; background-color: #4CAF50; color: white; border: none; }";
-  html += "input[type='submit']:hover { background-color: #45a049; }";
-  html += "textare { width: 100%; padding: 10px; margin: 5px 0; }";
-  html += "</style>";
-  html += "</head>";
-  html += "<body>";
-  html += "<div class=\"main\">";
-  html += "<h1>WLBridge4TRX-Configuration</h1>";
-  html += "<form action='/update' method='post'>";
-  html += "<label for='wl_URL'>Wavelog URL:</label><br>";
-  html += "<input type='text' id='wl_URL' name='wl_URL' value='"+wl_url+"'><br>";
-  html += "<label for='wl_Token'>Wavelog Token:</label><br>";
-  html += "<input type='text' id='wl_Token' name='wl_Token' value='"+wl_token+"'><br>";
-  html += "<label for='wl_Radio'>Wavelog Radio Name:</label><br>";
-  html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+wl_radio+"'><br>";
-  html += "<label for='wl_rootCACertificate'>Wavelog CA Certificate</label><br>";
-  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate' rows='40' cols='80' >"+wl_rootCACertificate+"'</textarea><br>";
-  html += "<input type='submit' value='Update'>";
-  html += "</form>";
-  html += "</div>";
-  html += "</body>";
-  html += "</html>";
+  String html = "<!DOCTYPE html>\n";
+  html += "<html>\n";
+  html += "<head>\n";
+  html += "<meta charset=\"UTF-8\">\n";
+  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
+  html += "<title>WLBridge4TRX</title>\n";
+  html += "<style>\n";
+  html += "body { font-family: Arial, sans-serif; }\n";
+  html += ".main { max-width: 450px; margin: 0 auto; }\n";
+  html += ".version { font-size: 10px; margin-top: 20px; }\n";
+  html += "input[type='text'] { width: 440px; padding: 5px; margin: 5px 0; margin-bottom:15px; border: 1px solid gray; }\n";
+  html += "input[type='submit'] { width: 452px; padding: 10px; margin-top: 10px; border: 1px solid gray; }\n";
+  html += "label {font-weight: bold; }\n";
+  html += "textarea { width: 446px; height: 500px; font-family:Monaco; border: 1px solid gray; margin: 5px 0 }\n";
+  html += "</style>\n";
+  html += "</head>\n";
+  html += "<body>\n";
+  html += "<div class=\"main\">\n";
+  html += "<h1>WLBridge4TRX-Setup</h1>\n";
+  html += "<form action='/update' method='post'>\n";
+  html += "<label for='wl_URL'>Wavelog URL (with full path to radio API)</label><br>\n";
+  html += "<input type='text' id='wl_URL' name='wl_URL' value='"+wl_url+"'><br>\n";
+  html += "<label for='wl_Token'>Wavelog Token</label><br>\n";
+  html += "<input type='text' id='wl_Token' name='wl_Token' value='"+wl_token+"'><br>\n";
+  html += "<label for='wl_Radio'>Wavelog Radio Name</label><br>\n";
+  html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+wl_radio+"'><br>\n";
+  html += "<label for='wl_rootCACertificate'>Wavelog Root CA Certificate (Only for HTTPS)</label><br>\n";
+  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate'>"+wl_rootCACertificate+"</textarea><br>\n";
+  html += "<input type='submit' value='Update'>\n";
+  html += "</form>\n";
+  html += "<div class='version'>Version: "+String(VERSION_MAJOR)+"."+String(VERSION_MINOR)+" - <a href='http://github.com/zone11/WLBridge4TRX' target='blank'/>github.com/zone11/WLBridge4TRX</a></div>\n";
+  html += "</div>\n";
+  html += "</body>\n";
+  html += "</html>\n";
 
   server.send(200, "text/html", html);
 }
 
 void webSiteUpdate() {
-  String html = "<!DOCTYPE html>";
-  html += "<html>";
-  html += "<head>";
-  html += "<meta charset=\"UTF-8\">";
-  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-  html += "<title>WLBridge4TRX</title>";
-  html += "<style>";
-  html += "body { font-family: Arial, sans-serif; }";
-  html += ".main { max-width: 400px; margin: 0 auto; padding: 20px; }";
-  html += "</style>";
-  html += "</head>";
-  html += "<body>";
-  html += "<div class=\"main\">";
-  html += "<h1>WLBridge4TRX-Configuration</h1>";
-  html += "Settings saved, rebooting...";
-  html += "</div>";
-  html += "</body>";
-  html += "</html>";
+  String html = "<!DOCTYPE html>\n";
+  html += "<html>\n";
+  html += "<head>\n";
+  html += "<meta charset=\"UTF-8\">\n";
+  html += "<meta http-equiv=\"refresh\" content=\"3; URL=/\" />\n";
+  html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
+  html += "<title>WLBridge4TRX</title>\n";
+  html += "<style>\n";
+  html += "body { font-family: Arial, sans-serif; }\n";
+  html += ".main { max-width: 450px; margin: 0 auto; }\n";
+  html += "</style>\n";
+  html += "</head>\n";
+  html += "<body>\n";
+  html += "<div class=\"main\">\n";
+  html += "<h1>WLBridge4TRX-Setup</h1>\n";
+  html += "Settings saved, rebooting...\n";
+  html += "</div>\n";
+  html += "</body>\n";
+  html += "</html>\n";
 
   wl_url = server.arg("wl_URL");
   wl_token = server.arg("wl_Token");
@@ -194,6 +197,7 @@ void webSiteUpdate() {
   if (savePreferences(wl_url, wl_token, wl_radio, wl_rootCACertificate)) {
     server.send(200, "text/html", html);
     logging("HTTP","Saving config sucessfull, rebooting");
+    delay(2000);
     ESP.restart();
   } else {
     logging("HTTP", "Saving config failed!");
@@ -224,9 +228,6 @@ void setup() {
 
   // Lets start WIFI and the manager if required
   initWiFi();
-
-  // Spit out some Network informations
-
 
   // Start local web server
   server.on("/", webSiteHome);
