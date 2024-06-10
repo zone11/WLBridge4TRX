@@ -148,7 +148,7 @@ void webSiteHome() {
   html += "</head>\n";
   html += "<body>\n";
   html += "<div class=\"main\">\n";
-  html += "<h1>WLBridge4TRX-Setup</h1>\n";
+  html += "<h1>WLBridge4TRX - Setup</h1>\n";
   html += "<form action='/update' method='post'>\n";
   html += "<label for='wl_URL'>Wavelog URL (with full path to radio API)</label><br>\n";
   html += "<input type='text' id='wl_URL' name='wl_URL' value='"+wl_url+"'><br>\n";
@@ -183,7 +183,7 @@ void webSiteUpdate() {
   html += "</head>\n";
   html += "<body>\n";
   html += "<div class=\"main\">\n";
-  html += "<h1>WLBridge4TRX-Setup</h1>\n";
+  html += "<h1>WLBridge4TRX - Setup</h1>\n";
   html += "Settings saved, rebooting...\n";
   html += "</div>\n";
   html += "</body>\n";

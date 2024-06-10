@@ -3,7 +3,6 @@
 #include <WiFiClientSecure.h>
 
 void sendToWavelog(unsigned long qrg, String mode, String radio, String url, String token, String caCert) {
-
   String RequestData = "{\"key\":\"" + token + "\",\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"}";
 
   WiFiClientSecure *client = new WiFiClientSecure;
