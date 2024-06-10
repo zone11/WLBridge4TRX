@@ -1,7 +1,6 @@
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
 #define LOGGING_SERIAL 1
-#define SSLSUPPORT 1
 
 const char* default_wl_url ="https://mywavelog.url/api/radio";
 const char* default_wl_token = "wl0123456789abcdef";

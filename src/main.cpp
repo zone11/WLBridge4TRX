@@ -6,7 +6,6 @@
 #include <ESPmDNS.h>
 #include <logging.h>
 #include <wavelog.h>
-#include <cat.h>
 
 // Configuration values 
 String wl_url ="";
@@ -29,6 +28,9 @@ unsigned long last_millis = 0;
 // Instances for eSPIFFS (Settings) and the webserver
 eSPIFFS fileSystem;
 WebServer server(80);
+
+// CAT Modes
+String yaesuMode[] = {"ERR", "LSB", "USB", "CW-U","FM","AM"};
 
 bool catParseBuffer() {
   if (cat_buffer.length() > 1 ) {
@@ -59,11 +61,11 @@ void initWiFi() {
 
   // Start AP if last WLAN is unavilable, restart if no valid configuration is provided.
   if(!wm.autoConnect("WLBridge4TRX")) {
-      logging("WIFI","Failed to connect, reboot!");
-      ESP.restart();
+    logging("WIFI","Failed to connect, reboot!");
+    ESP.restart();
   } 
   else {
-      logging("WIFI","Connected! IP: "+WiFi.localIP().toString());
+    logging("WIFI","Connected! IP: "+WiFi.localIP().toString());
   }
 }
 
@@ -194,7 +196,7 @@ void webSiteUpdate() {
   wl_radio = server.arg("wl_Radio");
   wl_rootCACertificate = server.arg("wl_rootCACertificate");
 
-  if (savePreferences(wl_url, wl_token, wl_radio, wl_rootCACertificate)) {
+  if (savePreferences(wl_url, wl_radio, wl_token, wl_rootCACertificate)) {
     server.send(200, "text/html", html);
     logging("HTTP","Saving config sucessfull, rebooting");
     delay(2000);
@@ -242,6 +244,8 @@ void setup() {
     logging("MDNS","Service started");
   }
   MDNS.addService("http", "tcp", 80);
+
+  sendToWavelog(12345000, "SSB", wl_radio, wl_url, wl_token, wl_rootCACertificate);
 }
 
 void loop() {
@@ -272,9 +276,11 @@ void loop() {
     last_millis = millis();
   }
 
+  // Read CAT data from Serial2
   if (Serial2.available()) {
     cat_buffer += Serial2.readString();
   }
 
+  // Ensure the WebServer for configurations
   server.handleClient();
 }
