@@ -14,14 +14,15 @@ String wl_radio = "";
 String wl_rootCACertificate = "";
 
 // Variables for daily use
-String cat_buffer = ";";
-bool cat_get = false;
-unsigned long cat_qrg = 0;
+String cat_buffer;
+long cat_qrg = 0;
+long cat_qrg_last = 0;
 unsigned int cat_mode = 0;
-unsigned long cat_qrg_last = 0;
 unsigned int cat_mode_last = 0;
+int semiFirst = 0;
+int semiLast = 0;
 
-unsigned long wl_qrg = 0;
+long wl_qrg = 0;
 String wl_mode = "SSB";
 unsigned long last_millis = 0;
 
@@ -31,28 +32,6 @@ WebServer server(80);
 
 // CAT Modes
 String yaesuMode[] = {"ERR", "LSB", "USB", "CW-U","FM","AM"};
-
-bool catParseBuffer() {
-  if (cat_buffer.length() > 1 ) {
-    int semiFirst = cat_buffer.indexOf(";");
-    int semiLast = cat_buffer.lastIndexOf(";");
-
-    // MODE
-    if((semiLast-semiFirst == 5)) {
-      cat_mode = cat_buffer.substring(4,5).toInt();
-      cat_buffer = ";";
-      return true;
-    }
-
-    // QRG
-    if((semiLast-semiFirst == 12)) {
-      cat_qrg = cat_buffer.substring(3,12).toInt();
-      cat_buffer = ";";
-      return true;
-    }
-  }
-  return false;
-}
 
 void initWiFi() {
   // Init WifiManager
@@ -196,7 +175,7 @@ void webSiteUpdate() {
   wl_radio = server.arg("wl_Radio");
   wl_rootCACertificate = server.arg("wl_rootCACertificate");
 
-  if (savePreferences(wl_url, wl_radio, wl_token, wl_rootCACertificate)) {
+  if (savePreferences(wl_url, wl_token, wl_radio, wl_rootCACertificate)) {
     server.send(200, "text/html", html);
     logging("HTTP","Saving config sucessfull, rebooting");
     delay(2000);
@@ -205,6 +184,7 @@ void webSiteUpdate() {
     logging("HTTP", "Saving config failed!");
   }
 }
+
 void setup() {
   // Init Serial (Debug) and Serial2 (CAT)
   Serial.begin(115200);
@@ -245,36 +225,55 @@ void setup() {
   }
   MDNS.addService("http", "tcp", 80);
 
-  sendToWavelog(12345000, "SSB", wl_radio, wl_url, wl_token, wl_rootCACertificate);
+  // sendToWavelog(12345000, "SSB", wl_radio, wl_url, wl_token, wl_rootCACertificate);
 }
 
+void catSendRequest() {
+  // FA; for QRG, MD0 for the mode
+  Serial2.print("FA;MD0;");  
+}
+
+bool catParseBuffer() {
+  int posQRG = 0;
+  int posMode= 0;
+
+  if (cat_buffer.length() > 17 ) {
+    // Example response: FA007045100;MD01;
+    // always catch the last entry in the buffer!
+    posQRG = cat_buffer.lastIndexOf("FA");
+    posMode = cat_buffer.lastIndexOf("MD0");
+
+    cat_qrg = cat_buffer.substring(posQRG+2,posQRG+11).toInt();
+    cat_mode = cat_buffer.substring(posMode+3,posMode+4).toInt();
+
+    cat_buffer = "";
+
+    return true;
+  }
+  return false;
+}
 void loop() {
-  if (millis() > (last_millis+250)) {
-    // Send CAT command
-    if(cat_get == false) {
-      Serial2.print("FA;");
-      cat_get = true;
-    } else {
-      Serial2.print("MD0;");
-      cat_get = false;
-    }
-
-    // Parse CAT response and send to Wavelog
-    if (catParseBuffer()) {
-      if ((cat_qrg != cat_qrg_last) || (cat_mode != cat_mode_last)) {
-        wl_qrg = cat_qrg;
-        wl_mode = yaesuMode[cat_mode];
-
-        logging("CAT", "QRG: "+wl_qrg);
-        logging("CAT", "Mode: "+wl_mode);
-        sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_token, wl_url, wl_rootCACertificate);
-
-        cat_qrg_last = cat_qrg;
-        cat_mode_last = cat_mode;
-      } 
-   }
+  // Request CAT data every second
+  if (millis() > (last_millis+1000)) {
+    catSendRequest();
     last_millis = millis();
   }
+
+  // Parse CAT response and send to Wavelog
+  if (catParseBuffer()) {
+    if ((cat_qrg != cat_qrg_last) || (cat_mode != cat_mode_last)) {
+      logging("CAT","The data has changed!");
+      wl_qrg = cat_qrg;
+      wl_mode = yaesuMode[cat_mode];
+
+      logging("CAT", "QRG: "+String(wl_qrg));
+      logging("CAT", "Mode: "+wl_mode);
+      sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_url, wl_token, wl_rootCACertificate);
+
+      cat_qrg_last = cat_qrg;
+      cat_mode_last = cat_mode;
+    }  
+   }
 
   // Read CAT data from Serial2
   if (Serial2.available()) {
