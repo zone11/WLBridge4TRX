@@ -19,12 +19,10 @@ long cat_qrg = 0;
 long cat_qrg_last = 0;
 unsigned int cat_mode = 0;
 unsigned int cat_mode_last = 0;
-int semiFirst = 0;
-int semiLast = 0;
 
 long wl_qrg = 0;
 String wl_mode = "SSB";
-unsigned long last_millis = 0;
+unsigned long last_millis_cat = 0;
 
 // Instances for eSPIFFS (Settings) and the webserver
 eSPIFFS fileSystem;
@@ -218,14 +216,14 @@ void setup() {
   logging("HTTP","Service started");
 
   // Announce HTTP of this device using mDNS
+  #if ENABLE_MDNS == 1
   if (!MDNS.begin("WLBridge4TRX")) {
     logging("MDNS","Service failed!");
   } else {
     logging("MDNS","Service started");
   }
   MDNS.addService("http", "tcp", 80);
-
-  // sendToWavelog(12345000, "SSB", wl_radio, wl_url, wl_token, wl_rootCACertificate);
+  #endif
 }
 
 void catSendRequest() {
@@ -254,9 +252,9 @@ bool catParseBuffer() {
 }
 void loop() {
   // Request CAT data every second
-  if (millis() > (last_millis+1000)) {
+  if (millis() > (last_millis_cat+1000)) {
     catSendRequest();
-    last_millis = millis();
+    last_millis_cat = millis();
   }
 
   // Parse CAT response and send to Wavelog
