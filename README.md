@@ -7,7 +7,7 @@ Serial console
 - You will see whats going on.
 
 Currently supporting only YAESU Radio with CAT
-- Connect a levelshifter to Serial2 pins of the ESP32 -> G16, G17 to interface with CAT of your radio, more about this very soon on this stage.
+- Connect a levelshifter (https://www.sparkfun.com/products/11189) to Serial2 pins of the ESP32 -> G16, G17 to interface with CAT of your radio, more about this very soon on this stage.
 - Set the radio serial speed for CAT to 9600bps.
 
 Usage
