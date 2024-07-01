@@ -23,6 +23,7 @@ unsigned int cat_mode_last = 0;
 long wl_qrg = 0;
 String wl_mode = "SSB";
 unsigned long last_millis_cat = 0;
+unsigned long last_millis_upload = 0;
 
 // Instances for eSPIFFS (Settings) and the webserver
 eSPIFFS fileSystem;
@@ -98,7 +99,7 @@ boolean readPreferences() {
   } else {
     logging("eSPIFFS", "no configuration found, lets create one with defaults and reboot");
     if (savePreferences(default_wl_url, default_wl_token, default_wl_radio, default_wl_rootCACertificate) == true) {
-      delay(2000);
+      delay(1000);
       ESP.restart();
       return true;
     } else {
@@ -252,7 +253,7 @@ bool catParseBuffer() {
 }
 void loop() {
   // Request CAT data every second
-  if (millis() > (last_millis_cat+1000)) {
+  if (millis() > (last_millis_cat+500)) {
     catSendRequest();
     last_millis_cat = millis();
   }
@@ -266,10 +267,17 @@ void loop() {
 
       logging("CAT", "QRG: "+String(wl_qrg));
       logging("CAT", "Mode: "+wl_mode);
-      sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_url, wl_token, wl_rootCACertificate);
+
+      // // wait 2 second until changes have settled
+      // if (millis() > (last_millis_upload+2000)) {
+      //   logging("CAT","No changes for 1sec, lets send it to Wavelog!");
+        sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_url, wl_token, wl_rootCACertificate);
+        
+      // }
 
       cat_qrg_last = cat_qrg;
       cat_mode_last = cat_mode;
+      
     }  
    }
 

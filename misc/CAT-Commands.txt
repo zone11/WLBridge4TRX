@@ -1,0 +1,6 @@
+[YAESU FT991]
+QRG: FA; -> FA144305700;
+Mode: MD0; -> MD02;
+
+
+
