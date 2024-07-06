@@ -250,7 +250,7 @@ bool catParseBuffer() {
     cat_mode = cat_buffer.substring(posMode+3,posMode+4).toInt(); // YAESU
     
     //cat_qrg = cat_buffer.substring(posQRG+2,posQRG+13).toInt(); // ELECRAFT
-    //cat_mode = cat_buffer.substring(posMode+2,posMode+3).toInt(); // ELECRAFT
+    //cat_mode = cat_buffer.substring(posMode+2,posMode+2).toInt(); // ELECRAFT
 
     cat_buffer = "";
 
@@ -275,12 +275,8 @@ void loop() {
       logging("CAT", "QRG: "+String(wl_qrg));
       logging("CAT", "Mode: "+wl_mode);
 
-      // // wait 2 second until changes have settled
-      // if (millis() > (last_millis_upload+2000)) {
-      //   logging("CAT","No changes for 1sec, lets send it to Wavelog!");
-        sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_url, wl_token, wl_rootCACertificate);
+      sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_url, wl_token, wl_rootCACertificate);
         
-      // }
 
       cat_qrg_last = cat_qrg;
       cat_mode_last = cat_mode;
