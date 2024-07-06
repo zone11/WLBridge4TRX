@@ -2,5 +2,6 @@
 QRG: FA; -> FA144305700;
 Mode: MD0; -> MD02;
 
-
-
+[ELECRAFT KX2/KX3]
+QRG: FA; -> FA00014253700;
+Mode: MD; -> MD2;

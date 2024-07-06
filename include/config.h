@@ -3,6 +3,7 @@
 #define LOGGING_SERIAL 1
 #define ENABLE_MDNS 1
 
+const char* default_cat_model ="yaesu";
 const char* default_wl_url ="https://mywavelog.url/api/radio";
 const char* default_wl_token = "wl0123456789abcdef";
 const char* default_wl_radio = "WLBridge4TRX";
