@@ -21,4 +21,4 @@ Currently tested with YAESU (991A) and Elecraft (KX2) Radios using CAT over RS23
 
 ### Example (Elecraft KX2)
 Using a Sparkfun ESP32 Thing with a LiPo Battery for portable operation. The radio is connected using a MAX2323 levelshifter to connect to the radios RS232 Port (ACC in this case).
-![Elecraft KX2 Exampple](https://github.com/zone11/WLBridge4TRX/blob/main/misc/ESP32Thing-KX2.jpg)
+![Elecraft KX2 Example](https://github.com/zone11/WLBridge4TRX/blob/main/misc/ESP32Thing-KX2.jpg)
