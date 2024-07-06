@@ -30,8 +30,8 @@ eSPIFFS fileSystem;
 WebServer server(80);
 
 // CAT Modes
-String catModes[] = {"ERR", "LSB", "USB", "CW","FM","AM"}; // YAESU
-// String catModes[] = {"ERR", "LSB", "USB", "CW-U","FM","AM","DATA","CW-REV","DATA-REV"}; // ELECRAFT
+//String catModes[] = {"ERR", "LSB", "USB", "CW","FM","AM"}; // YAESU
+String catModes[] = {"ERR", "LSB", "USB", "CW-U","FM","AM","DATA","CW-REV","DATA-REV"}; // ELECRAFT
 
 void initWiFi() {
   // Init WifiManager
@@ -231,7 +231,7 @@ void setup() {
 void catSendRequest() {
   // YAESU: FA; for QRG, MD0 for the mode
   // ELECRAFT: FA; for QRG, MD for the mode
-  Serial2.print("FA;MD0;");  
+  Serial2.print("FA;MD;");  
 }
 
 bool catParseBuffer() {
@@ -243,14 +243,14 @@ bool catParseBuffer() {
     // Example response ELECRAFT: FA00014253700;MD2;
     // always catch the last entry in the buffer!
     posQRG = cat_buffer.lastIndexOf("FA");
-    posMode = cat_buffer.lastIndexOf("MD0"); // YAESU
-    //posMode = cat_buffer.lastIndexOf("MD"); // ELECRAFT
+    //posMode = cat_buffer.lastIndexOf("MD0"); // YAESU
+    posMode = cat_buffer.lastIndexOf("MD"); // ELECRAFT
 
-    cat_qrg = cat_buffer.substring(posQRG+2,posQRG+11).toInt(); // YAESU
-    cat_mode = cat_buffer.substring(posMode+3,posMode+4).toInt(); // YAESU
+    //cat_qrg = cat_buffer.substring(posQRG+2,posQRG+11).toInt(); // YAESU
+   // cat_mode = cat_buffer.substring(posMode+3,posMode+4).toInt(); // YAESU
     
-    //cat_qrg = cat_buffer.substring(posQRG+2,posQRG+13).toInt(); // ELECRAFT
-    //cat_mode = cat_buffer.substring(posMode+2,posMode+2).toInt(); // ELECRAFT
+    cat_qrg = cat_buffer.substring(posQRG+2,posQRG+13).toInt(); // ELECRAFT
+    cat_mode = cat_buffer.substring(posMode+2,posMode+3).toInt(); // ELECRAFT
 
     cat_buffer = "";
 
