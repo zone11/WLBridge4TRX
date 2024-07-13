@@ -20,8 +20,11 @@ Currently tested with YAESU (991A) and Elecraft (KX2) Radios using CAT over RS23
 - If your installation is SSL enabled, add the Root CA Certificate from the issuer of your SSL certificate. The one for Let's encrypt is configured by default.
 
 ### Example (Elecraft KX2)
-Using a Sparkfun ESP32 Thing with a LiPo Battery for portable operation. The radio is connected using a MAX2323 levelshifter to connect to the radios RS232 Port (ACC in this case).
+Using a Sparkfun ESP32 Thing with a LiPo Battery for portable operation. The radio is connected using a MAX2323 levelshifter to the radios RS232 Port (Port ACC).
 ![Elecraft KX2 Example](https://github.com/zone11/WLBridge4TRX/blob/main/misc/ESP32Thing-KX2.jpg)
+
+### ICOM Support
+I don't have an ICOM radio but Kim (DG9VH) build an interface for CI-V. Have a look at his project here: https://github.com/dg9vh/Wavelog_CI_V
 
 ### Questions/Suggestions
 Feel free to open an issue or start a discussion.
