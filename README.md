@@ -7,7 +7,7 @@ Cloudlog should also work, but is not tested -> have a look at Wavelog ;)
 - You will see whats going on.
 
 ### Radios
-Currently tested with YAESU (991A) and Elecraft (KX2) Radios using CAT over RS232
+Currently tested with YAESU (FT-991A) and Elecraft (KX-2) Radios using CAT over RS232
 - Connect a levelshifter (https://www.sparkfun.com/products/11189) to Serial2 pins of the ESP32 -> G16(RX), G17(TX) to interface with CAT/RS232 port of your radio.
 - Set the radio serial speed for CAT to 9600bps.
 
