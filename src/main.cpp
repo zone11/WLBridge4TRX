@@ -4,16 +4,14 @@
 #include <WebServer.h>
 #include <Effortless_SPIFFS.h>
 #include <ESPmDNS.h>
+#include <display.h>
 #include <logging.h>
 #include <wavelog.h>
-
-// Configuration values 
-String wl_url ="";
-String wl_token = "";
-String wl_radio = "";
-String wl_rootCACertificate = "";
+#include <globals.h>
 
 // Variables for daily use
+Wavelog wl;
+
 String cat_buffer;
 long cat_qrg = 0;
 long cat_qrg_last = 0;
@@ -24,6 +22,9 @@ long wl_qrg = 0;
 String wl_mode = "SSB";
 unsigned long last_millis_cat = 0;
 unsigned long last_millis_upload = 0;
+
+String netIP = "";
+bool netOnline = false;
 
 // Instances for eSPIFFS (Settings) and the webserver
 eSPIFFS fileSystem;
@@ -44,7 +45,9 @@ void initWiFi() {
     ESP.restart();
   } 
   else {
-    logging("WIFI","Connected! IP: "+WiFi.localIP().toString());
+    netOnline = true;
+    netIP = WiFi.localIP().toString();
+    logging("WIFI","Connected! IP: "+netIP);
   }
 }
 
@@ -79,17 +82,17 @@ boolean readPreferences() {
       String read_wl_radio = theSettings["radio"];
       String read_wl_rootCACertificate = theSettings["caCert"];
 
-      wl_url = read_wl_url;
-      wl_token = read_wl_token;
-      wl_radio = read_wl_radio;
-      wl_rootCACertificate = read_wl_rootCACertificate;
+      g_wl_url = read_wl_url;
+      g_wl_token = read_wl_token;
+      g_wl_radio = read_wl_radio;
+      g_wl_rootCACertificate = read_wl_rootCACertificate;
       
       String wl_rootCACertificateDisplay = read_wl_rootCACertificate;
       wl_rootCACertificateDisplay.replace("\n","\n\r");
 
-      logging("Prefs", "URL: "+wl_url);
-      logging("Prefs", "Token: "+wl_token);
-      logging("Prefs", "Radio: "+wl_radio);
+      logging("Prefs", "URL: "+g_wl_url);
+      logging("Prefs", "Token: "+g_wl_token);
+      logging("Prefs", "Radio: "+g_wl_radio);
       logging("Prefs", "RootCA Cert: "+wl_rootCACertificateDisplay);
       
       return true;
@@ -132,13 +135,13 @@ void webSiteHome() {
   html += "<h1>WLBridge4TRX - Setup</h1>\n";
   html += "<form action='/update' method='post'>\n";
   html += "<label for='wl_URL'>Wavelog URL (with full path to radio API)</label><br>\n";
-  html += "<input type='text' id='wl_URL' name='wl_URL' value='"+wl_url+"'><br>\n";
+  html += "<input type='text' id='wl_URL' name='wl_URL' value='"+g_wl_url+"'><br>\n";
   html += "<label for='wl_Token'>Wavelog Token</label><br>\n";
-  html += "<input type='text' id='wl_Token' name='wl_Token' value='"+wl_token+"'><br>\n";
+  html += "<input type='text' id='wl_Token' name='wl_Token' value='"+g_wl_token+"'><br>\n";
   html += "<label for='wl_Radio'>Wavelog Radio Name</label><br>\n";
-  html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+wl_radio+"'><br>\n";
+  html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+g_wl_radio+"'><br>\n";
   html += "<label for='wl_rootCACertificate'>Wavelog Root CA Certificate (Only for HTTPS)</label><br>\n";
-  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate'>"+wl_rootCACertificate+"</textarea><br>\n";
+  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate'>"+g_wl_rootCACertificate+"</textarea><br>\n";
   html += "<input type='submit' value='Update'>\n";
   html += "</form>\n";
   html += "<div class='version'>Version: "+String(VERSION_MAJOR)+"."+String(VERSION_MINOR)+" - <a href='http://github.com/zone11/WLBridge4TRX' target='blank'/>github.com/zone11/WLBridge4TRX</a></div>\n";
@@ -170,12 +173,12 @@ void webSiteUpdate() {
   html += "</body>\n";
   html += "</html>\n";
 
-  wl_url = server.arg("wl_URL");
-  wl_token = server.arg("wl_Token");
-  wl_radio = server.arg("wl_Radio");
-  wl_rootCACertificate = server.arg("wl_rootCACertificate");
+  g_wl_url = server.arg("wl_URL");
+  g_wl_token = server.arg("wl_Token");
+  g_wl_radio = server.arg("wl_Radio");
+  g_wl_rootCACertificate = server.arg("wl_rootCACertificate");
 
-  if (savePreferences(wl_url, wl_token, wl_radio, wl_rootCACertificate)) {
+  if (savePreferences(g_wl_url, g_wl_token, g_wl_radio, g_wl_rootCACertificate)) {
     server.send(200, "text/html", html);
     logging("HTTP","Saving config sucessfull, rebooting");
     delay(2000);
@@ -189,6 +192,11 @@ void setup() {
   // Init Serial (Debug) and Serial2 (CAT)
   Serial.begin(115200);
   Serial2.begin(9600);
+
+  // Init OLED and show splash
+  if (!displayInit()){
+    logging("OLED","initialization failed!");
+  };
 
   // Lets go!
   delay(2000);
@@ -208,8 +216,14 @@ void setup() {
     logging("eSPIFFS","reading settings went fine");
   }
 
+  // Prepare Wavelog
+  wl.init(g_wl_url, g_wl_token, g_wl_rootCACertificate);
+
   // Lets start WIFI and the manager if required
   initWiFi();
+
+  // Show acutal Infos on Display
+  displayInfos("booting",netIP,"Online 1.9.1","USB",10, 14380);
 
   // Start local web server
   server.on("/", webSiteHome);
@@ -247,7 +261,7 @@ bool catParseBuffer() {
     posMode = cat_buffer.lastIndexOf("MD"); // ELECRAFT
 
     //cat_qrg = cat_buffer.substring(posQRG+2,posQRG+11).toInt(); // YAESU
-   // cat_mode = cat_buffer.substring(posMode+3,posMode+4).toInt(); // YAESU
+    //cat_mode = cat_buffer.substring(posMode+3,posMode+4).toInt(); // YAESU
     
     cat_qrg = cat_buffer.substring(posQRG+2,posQRG+13).toInt(); // ELECRAFT
     cat_mode = cat_buffer.substring(posMode+2,posMode+3).toInt(); // ELECRAFT
@@ -275,8 +289,7 @@ void loop() {
       logging("CAT", "QRG: "+String(wl_qrg));
       logging("CAT", "Mode: "+wl_mode);
 
-      sendToWavelog(wl_qrg, wl_mode, wl_radio, wl_url, wl_token, wl_rootCACertificate);
-        
+      wl.sendQRG(g_wl_radio, wl_mode, wl_qrg);
 
       cat_qrg_last = cat_qrg;
       cat_mode_last = cat_mode;
