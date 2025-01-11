@@ -21,15 +21,12 @@ class Wavelog {
     void init(String url, String token) {
       this->url = url;
       this->token = token;
-      this->cert = "";
-      this->version = "";
     }
 
     void init(String url, String token, String cert) {
       this->url = url;
       this->token = token;
       this->cert = cert;
-      this->version = "";
     }
 
     boolean sendQRG(String radio, String mode, unsigned long qrg) {
@@ -50,7 +47,7 @@ class Wavelog {
       WiFiClientSecure *client_secure = new WiFiClientSecure;
       WiFiClient *client = new WiFiClient(); 
       HTTPClient wl_request;
-      bool clientOK;
+      int clientOK;
       bool clientSuccess = false;
 
       // HTTPS or not?
@@ -94,7 +91,7 @@ class Wavelog {
 
       return clientSuccess;
     }
-    
+
     void getVersion() {
 
     }
