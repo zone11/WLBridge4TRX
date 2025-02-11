@@ -18,29 +18,21 @@ class Wavelog {
       this->version = "";
     }
 
-    void init(String url, String token) {
-      this->url = url;
-      this->token = token;
-    }
-
-    void init(String url, String token, String cert) {
+    bool init(String url, String token, String cert) {
       this->url = url;
       this->token = token;
       this->cert = cert;
-    }
 
-    boolean sendQRG(String radio, String mode, unsigned long qrg) {
-      String RequestData = "\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"}";
-      if (callAPI(RequestData)) {
-        logging("WL", "API Call OK");
-        return true;
+      if (this->getVersion() >= 2) {
+        logging("WL","Init OK");
+        return true;        
       } else {
-        logging("WL","API Call Error");
+        logging("WL","Init failed");
         return false;
-      }
+      } 
     }
 
-    bool callAPI(String request) {
+    bool callAPI(String endpoint, String request) {
       String RequestData = "{\"key\":\"" + this->token + "\"," + request + "}";
       this->url.toLowerCase();
 
@@ -92,7 +84,26 @@ class Wavelog {
       return clientSuccess;
     }
 
-    void getVersion() {
+    boolean sendQRG(String radio, String mode, unsigned long qrg) {
+      String RequestData = "\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"}";
+      if (callAPI("radio", RequestData)) {
+        logging("WL", "API Call OK");
+        return true;
+      } else {
+        logging("WL","API Call Error");
+        return false;
+      }
+    }
 
+    boolean getVersion() {
+      if (callAPI("version", "") == "error") {
+        logging("WL","API Call Error");
+        return false;
+      } else {
+        // Parse version from JSON - DUMMY
+        this->version = "2.0";
+        logging("WL","Version: "+this->version);
+        return true;
+      }
     }
 };
