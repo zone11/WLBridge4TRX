@@ -23,11 +23,13 @@ class Wavelog {
       this->token = token;
       this->cert = cert;
 
-      if (this->getVersion() >= 2) {
+      // Check if the version is 2.0 or higher
+      this->getOnlineVersion();
+      if (this->version.toInt() >= 2) {
         logging("WL","Init OK");
         return true;        
       } else {
-        logging("WL","Init failed");
+        logging("WL","Init failed: Wavelog 2.0 or higher required");
         return false;
       } 
     }
@@ -95,15 +97,19 @@ class Wavelog {
       }
     }
 
-    boolean getVersion() {
-      if (callAPI("version", "") == "error") {
+    boolean getOnlineVersion() {
+      if (callAPI("version", "") == false) {
         logging("WL","API Call Error");
         return false;
       } else {
         // Parse version from JSON - DUMMY
-        this->version = "2.0";
+        this->version = "2.0.3"; // TODO: Parse version from JSON response
         logging("WL","Version: "+this->version);
         return true;
       }
+    }
+    
+    String getVersion() {
+      return this->version;
     }
 };

@@ -216,14 +216,14 @@ void setup() {
     logging("eSPIFFS","reading settings went fine");
   }
 
-  // Prepare Wavelog
-  wl.init(g_wl_url, g_wl_token, g_wl_rootCACertificate);
-
   // Lets start WIFI and the manager if required
   initWiFi();
 
+  // Prepare Wavelog
+  wl.init(g_wl_url, g_wl_token, g_wl_rootCACertificate);
+
   // Show acutal Infos on Display
-  displayInfos("booting",netIP,"Online 1.9.1","USB",10, 14380);
+  displayInfos("booting",netIP,"Online "+wl.getVersion(),"USB",10, 14380);
 
   // Start local web server
   server.on("/", webSiteHome);
