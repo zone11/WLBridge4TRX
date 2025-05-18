@@ -9,6 +9,8 @@
 #include <wavelog.h>
 #include <globals.h>
 
+#define LED_BUILTIN 2
+
 // Variables for daily use
 Wavelog wl;
 
@@ -188,10 +190,24 @@ void webSiteUpdate() {
   }
 }
 
+// Simple task for testing
+void TaskBlink(void *pvParameters) {
+  pinMode(LED_BUILTIN, OUTPUT);
+  while (true) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    digitalWrite(LED_BUILTIN, LOW);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }
+}
+
 void setup() {
   // Init Serial (Debug) and Serial2 (CAT)
   Serial.begin(115200);
   Serial2.begin(9600);
+
+   // FreeRTOS-Tasks
+  xTaskCreate(TaskBlink,"BlinkTask",1024, NULL,1,NULL); // Testing
 
   // Init OLED and show splash
   if (!displayInit()){
