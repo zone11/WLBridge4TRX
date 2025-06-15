@@ -5,3 +5,7 @@ String g_wl_url ="";
 String g_wl_token = "";
 String g_wl_radio = "";
 String g_wl_rootCACertificate = "";
+
+// Radio values
+int gRadioQRG = 0;
+int gRadioMD = 0;

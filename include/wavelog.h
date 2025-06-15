@@ -35,25 +35,27 @@ class Wavelog {
     }
 
     bool callAPI(String endpoint, String request) {
+      logging("WL", "Free heap before API: " + String(ESP.getFreeHeap()));
       String RequestData = "{\"key\":\"" + this->token + "\"," + request + "}";
       this->url.toLowerCase();
 
-      WiFiClientSecure *client_secure = new WiFiClientSecure;
-      WiFiClient *client = new WiFiClient(); 
+      WiFiClientSecure client_secure;
+      WiFiClient client; 
       HTTPClient wl_request;
       int clientOK;
       bool clientSuccess = false;
 
+      logging("WL", "Data: "+RequestData);
       // HTTPS or not?
       if ((this->url.startsWith("https://")) && this->cert != "") {
         // HTTPS
         logging("WL","Using HTTPS");
-        client_secure -> setCACert(this->cert.c_str());
-        clientOK = wl_request.begin(*client_secure, this->url);
-      } else if(this-url.startsWith("http://")) {
+        client_secure.setCACert(this->cert.c_str());
+        clientOK = wl_request.begin(client_secure, this->url);
+      } else if(this->url.startsWith("http://")) {
         // HTTP
         logging("WL","Using HTTP");
-        clientOK = wl_request.begin(*client, this->url);
+        clientOK = wl_request.begin(client, this->url);
       } else {
         logging("WL", "URL is missing the protocol (http/https): "+this->url);
       }      
@@ -79,15 +81,11 @@ class Wavelog {
         logging("WL","Unable to connect!");
       }
       
-      // Cleanup Memory
-      delete client;
-      delete client_secure;
-
       return clientSuccess;
     }
 
     boolean sendQRG(String radio, String mode, unsigned long qrg) {
-      String RequestData = "\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"}";
+      String RequestData = "\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"";
       if (callAPI("radio", RequestData)) {
         logging("WL", "API Call OK");
         return true;

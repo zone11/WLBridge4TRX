@@ -7,23 +7,18 @@
 #include <display.h>
 #include <logging.h>
 #include <wavelog.h>
+#include <radio.h>
 #include <globals.h>
+
 
 #define LED_BUILTIN 2
 
 // Variables for daily use
 Wavelog wl;
+Radio trx(Serial2, 9600, "FA", "MD", 2, 3, 11, 1);
 
-String cat_buffer;
 long cat_qrg = 0;
-long cat_qrg_last = 0;
 unsigned int cat_mode = 0;
-unsigned int cat_mode_last = 0;
-
-long wl_qrg = 0;
-String wl_mode = "SSB";
-unsigned long last_millis_cat = 0;
-unsigned long last_millis_upload = 0;
 
 String netIP = "";
 bool netOnline = false;
@@ -33,7 +28,6 @@ eSPIFFS fileSystem;
 WebServer server(80);
 
 // CAT Modes
-//String catModes[] = {"ERR", "LSB", "USB", "CW","FM","AM"}; // YAESU
 String catModes[] = {"ERR", "LSB", "USB", "CW-U","FM","AM","DATA","CW-REV","DATA-REV"}; // ELECRAFT
 
 void initWiFi() {
@@ -190,24 +184,30 @@ void webSiteUpdate() {
   }
 }
 
-// Simple task for testing
-void TaskBlink(void *pvParameters) {
-  pinMode(LED_BUILTIN, OUTPUT);
+
+void TaskRadioUpdate(void *pvParameters) {
   while (true) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-    digitalWrite(LED_BUILTIN, LOW);
+    trx.pollCatInterface();
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }
+}
+
+void onRadioStateChanged(int freq, int mode) {
+  logging("Radio", "Callback - Freq: " + String(freq) + ", Mode: " + String(mode));
+  cat_qrg = freq;
+  cat_mode = mode;
+  wl.sendQRG(g_wl_radio, catModes[mode], freq);
 }
 
 void setup() {
   // Init Serial (Debug) and Serial2 (CAT)
   Serial.begin(115200);
-  Serial2.begin(9600);
 
    // FreeRTOS-Tasks
-  xTaskCreate(TaskBlink,"BlinkTask",1024, NULL,1,NULL); // Testing
+  xTaskCreate(TaskRadioUpdate, "RadioTask", 8192, NULL, 1, NULL);
+
+  trx.setOnStateChanged(onRadioStateChanged);
+  trx.begin();
 
   // Init OLED and show splash
   if (!displayInit()){
@@ -258,66 +258,7 @@ void setup() {
   #endif
 }
 
-void catSendRequest() {
-  // YAESU: FA; for QRG, MD0 for the mode
-  // ELECRAFT: FA; for QRG, MD for the mode
-  Serial2.print("FA;MD;");  
-}
-
-bool catParseBuffer() {
-  int posQRG = 0;
-  int posMode= 0;
-
-  if (cat_buffer.length() > 17 ) {
-    // Example response YAESU: FA007045100;MD01;
-    // Example response ELECRAFT: FA00014253700;MD2;
-    // always catch the last entry in the buffer!
-    posQRG = cat_buffer.lastIndexOf("FA");
-    //posMode = cat_buffer.lastIndexOf("MD0"); // YAESU
-    posMode = cat_buffer.lastIndexOf("MD"); // ELECRAFT
-
-    //cat_qrg = cat_buffer.substring(posQRG+2,posQRG+11).toInt(); // YAESU
-    //cat_mode = cat_buffer.substring(posMode+3,posMode+4).toInt(); // YAESU
-    
-    cat_qrg = cat_buffer.substring(posQRG+2,posQRG+13).toInt(); // ELECRAFT
-    cat_mode = cat_buffer.substring(posMode+2,posMode+3).toInt(); // ELECRAFT
-
-    cat_buffer = "";
-
-    return true;
-  }
-  return false;
-}
 void loop() {
-  // Request CAT data every second
-  if (millis() > (last_millis_cat+500)) {
-    catSendRequest();
-    last_millis_cat = millis();
-  }
-
-  // Parse CAT response and send to Wavelog
-  if (catParseBuffer()) {
-    if ((cat_qrg != cat_qrg_last) || (cat_mode != cat_mode_last)) {
-      logging("CAT","The data has changed!");
-      wl_qrg = cat_qrg;
-      wl_mode = catModes[cat_mode];
-
-      logging("CAT", "QRG: "+String(wl_qrg));
-      logging("CAT", "Mode: "+wl_mode);
-
-      wl.sendQRG(g_wl_radio, wl_mode, wl_qrg);
-
-      cat_qrg_last = cat_qrg;
-      cat_mode_last = cat_mode;
-      
-    }  
-   }
-
-  // Read CAT data from Serial2
-  if (Serial2.available()) {
-    cat_buffer += Serial2.readString();
-  }
-
   // Ensure the WebServer for configurations
   server.handleClient();
 }
