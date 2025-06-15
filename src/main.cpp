@@ -203,12 +203,6 @@ void setup() {
   // Init Serial (Debug) and Serial2 (CAT)
   Serial.begin(115200);
 
-   // FreeRTOS-Tasks
-  xTaskCreate(TaskRadioUpdate, "RadioTask", 8192, NULL, 1, NULL);
-
-  trx.setOnStateChanged(onRadioStateChanged);
-  trx.begin();
-
   // Init OLED and show splash
   if (!displayInit()){
     logging("OLED","initialization failed!");
@@ -239,7 +233,7 @@ void setup() {
   wl.init(g_wl_url, g_wl_token, g_wl_rootCACertificate);
 
   // Show acutal Infos on Display
-  displayInfos("booting",netIP,"Online "+wl.getVersion(),"USB",10, 14380);
+  //displayInfos("booting",netIP,"Online "+wl.getVersion(),"USB",10, 14380);
 
   // Start local web server
   server.on("/", webSiteHome);
@@ -256,6 +250,15 @@ void setup() {
   }
   MDNS.addService("http", "tcp", 80);
   #endif
+
+  // Radio CAT Interface
+  trx.begin();
+  trx.setOnStateChanged(onRadioStateChanged);
+  logging("Radio","CAT Interface started");
+
+  // FreeRTOS-Tasks
+  logging("RTOS","Running Tasks");
+  xTaskCreate(TaskRadioUpdate, "RadioTask", 8192, NULL, 1, NULL);
 }
 
 void loop() {

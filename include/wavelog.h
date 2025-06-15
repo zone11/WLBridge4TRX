@@ -2,6 +2,7 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 
 class Wavelog {
   private:
@@ -9,6 +10,7 @@ class Wavelog {
     String token;
     String cert;
     String version;
+    bool useHttps;
 
   public:    
     Wavelog() {
@@ -16,15 +18,17 @@ class Wavelog {
       this->token = "";
       this->cert = "";
       this->version = "";
+      this->useHttps = false;
     }
 
     bool init(String url, String token, String cert) {
       this->url = url;
       this->token = token;
       this->cert = cert;
+      this->useHttps = url.startsWith("https://");
 
       // Check if the version is 2.0 or higher
-      this->getOnlineVersion();
+      this->getVersion();
       if (this->version.toInt() >= 2) {
         logging("WL","Init OK");
         return true;        
@@ -34,9 +38,14 @@ class Wavelog {
       } 
     }
 
-    bool callAPI(String endpoint, String request) {
-      logging("WL", "Free heap before API: " + String(ESP.getFreeHeap()));
-      String RequestData = "{\"key\":\"" + this->token + "\"," + request + "}";
+    bool callAPI(String endpoint, String request, JsonDocument &responseDoc) {
+      //logging("WL", "Free heap before API: " + String(ESP.getFreeHeap()));
+      String RequestData;
+      if (request.length() > 0) {
+        RequestData = "{\"key\":\"" + this->token + "\"," + request + "}";
+      } else {
+        RequestData = "{\"key\":\"" + this->token + "\"}";
+      }
       this->url.toLowerCase();
 
       WiFiClientSecure client_secure;
@@ -45,20 +54,19 @@ class Wavelog {
       int clientOK;
       bool clientSuccess = false;
 
-      logging("WL", "Data: "+RequestData);
+      //logging("WL", "Data: "+RequestData);
+      //logging("WL", "Endpoint: "+endpoint);
+
+
       // HTTPS or not?
-      if ((this->url.startsWith("https://")) && this->cert != "") {
-        // HTTPS
+      if (this->useHttps && this->cert != "") {
         logging("WL","Using HTTPS");
         client_secure.setCACert(this->cert.c_str());
-        clientOK = wl_request.begin(client_secure, this->url);
-      } else if(this->url.startsWith("http://")) {
-        // HTTP
-        logging("WL","Using HTTP");
-        clientOK = wl_request.begin(client, this->url);
+        clientOK = wl_request.begin(client_secure, this->url+"/" + endpoint);
       } else {
-        logging("WL", "URL is missing the protocol (http/https): "+this->url);
-      }      
+        logging("WL","Using HTTP");
+        clientOK = wl_request.begin(client, this->url+"/" + endpoint);
+      }
 
       if (clientOK) {
         // Prepare header for JSON and add the payload for Wavelog
@@ -70,7 +78,15 @@ class Wavelog {
         // Error checking
         if (httpCode > 0) {
           logging("WL","POST... OK!");
-          clientSuccess = true;
+          String payload = wl_request.getString();
+          logging("WL","Response: " + payload);
+          DeserializationError error = deserializeJson(responseDoc, payload);
+          if (error) {
+            logging("WL", "Failed to parse JSON response");
+            clientSuccess = false;
+          } else {
+            clientSuccess = true;
+          }
         } else {
           logging("WL","POST... failed, error: "+wl_request.errorToString(httpCode));
         }
@@ -86,7 +102,8 @@ class Wavelog {
 
     boolean sendQRG(String radio, String mode, unsigned long qrg) {
       String RequestData = "\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"";
-      if (callAPI("radio", RequestData)) {
+      DynamicJsonDocument doc(256);
+      if (callAPI("radio", RequestData, doc)) {
         logging("WL", "API Call OK");
         return true;
       } else {
@@ -95,19 +112,18 @@ class Wavelog {
       }
     }
 
-    boolean getOnlineVersion() {
-      if (callAPI("version", "") == false) {
+    boolean getVersion() {
+      DynamicJsonDocument doc(256);
+      if (callAPI("version", "", doc) == false) {
         logging("WL","API Call Error");
         return false;
       } else {
-        // Parse version from JSON - DUMMY
-        this->version = "2.0.3"; // TODO: Parse version from JSON response
-        logging("WL","Version: "+this->version);
+        // Parse version from JSON response
+        if (doc["version"].is<String>()) {
+          this->version = doc["version"].as<String>();
+          logging("WL","Version: " + this->version);
+        }
         return true;
       }
-    }
-    
-    String getVersion() {
-      return this->version;
     }
 };
