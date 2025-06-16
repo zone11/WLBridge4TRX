@@ -6,7 +6,6 @@ String gWavelogCertificate = "";
 String gWavelogToken = "";
 String gWavelogRadio = "";
 
-
 // Radio values
 int gRadioFrequency = 0;
 int gRadioMode = 0;

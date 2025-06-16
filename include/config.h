@@ -4,7 +4,9 @@
 #define ENABLE_MDNS 1
 #define ENABLE_DISPLAY 1
 
-const char* default_wl_url ="https://mywavelog.url/api/radio";
+String cVersion = String(VERSION_MAJOR)+"."+String(VERSION_MINOR);
+
+const char* default_wl_url ="https://mywavelog.url/api";
 const char* default_wl_token = "wl0123456789abcdef";
 const char* default_wl_radio = "WLBridge4TRX";
 const char* default_wl_rootCACertificate = "-----BEGIN CERTIFICATE-----\n" \

@@ -4,11 +4,12 @@
 #include <WebServer.h>
 #include <Effortless_SPIFFS.h>
 #include <ESPmDNS.h>
-#include <display.h>
+#include <globals.h>
 #include <logging.h>
 #include <wavelog.h>
 #include <radio.h>
-#include <globals.h>
+#include <display.h>
+
 
 String netIP = "";
 bool netOnline = false;
@@ -18,6 +19,7 @@ eSPIFFS fileSystem;
 WebServer server(80);
 Wavelog wl;
 Radio trx(Serial2, 9600, "FA", "MD", 2, 3, 11, 1);
+Display display(22,21);
 
 
 // CAT Modes
@@ -134,7 +136,7 @@ void webSiteHome() {
   html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate'>"+gWavelogCertificate+"</textarea><br>\n";
   html += "<input type='submit' value='Update'>\n";
   html += "</form>\n";
-  html += "<div class='version'>Version: "+String(VERSION_MAJOR)+"."+String(VERSION_MINOR)+" - <a href='http://github.com/zone11/WLBridge4TRX' target='blank'/>github.com/zone11/WLBridge4TRX</a></div>\n";
+  html += "<div class='version'>Version: "+cVersion+" - <a href='http://github.com/zone11/WLBridge4TRX' target='blank'/>github.com/zone11/WLBridge4TRX</a></div>\n";
   html += "</div>\n";
   html += "</body>\n";
   html += "</html>\n";
@@ -187,25 +189,25 @@ void TaskRadioUpdate(void *pvParameters) {
 }
 
 void onRadioStateChanged(int freq, int mode) {
-  logging("Radio", "Callback - Freq: " + String(freq) + ", Mode: " + String(mode));
+  logging("Radio", "Callback - Freq: " + String(freq) + ", Mode: " + catModes[mode]);
   gRadioFrequency = freq;
   gRadioMode = mode;
   wl.sendQRG(gWavelogRadio, catModes[mode], freq);
 }
 
 void setup() {
-  // Init Serial (Debug)
+  // Init Serial (Debug) and start
   Serial.begin(115200);
 
+  delay(1000);
+  Serial.println();
+  logging("Main","Lets start! - Running version "+cVersion);
+
   // Init OLED and show splash
-  if (!displayInit()){
+  if (!display.begin()){
     logging("OLED","initialization failed!");
   };
 
-  // Lets go!
-  delay(2000);
-  Serial.println();
-  logging("Main","Lets start!");
   
   // Check SPIFFS
   if (!SPIFFS.begin(true)) {
@@ -225,9 +227,6 @@ void setup() {
 
   // Prepare Wavelog
   wl.init(gWavelogURL, gWavelogToken, gWavelogCertificate);
-
-  // Show acutal Infos on Display
-  //displayInfos("booting",netIP,"Online "+wl.getVersion(),"USB",10, 14380);
 
   // Start local web server
   server.on("/", webSiteHome);
