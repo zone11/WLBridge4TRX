@@ -10,25 +10,19 @@
 #include <radio.h>
 #include <globals.h>
 
-
-#define LED_BUILTIN 2
-
-// Variables for daily use
-Wavelog wl;
-Radio trx(Serial2, 9600, "FA", "MD", 2, 3, 11, 1);
-
-long cat_qrg = 0;
-unsigned int cat_mode = 0;
-
 String netIP = "";
 bool netOnline = false;
 
-// Instances for eSPIFFS (Settings) and the webserver
+// Objects
 eSPIFFS fileSystem;
 WebServer server(80);
+Wavelog wl;
+Radio trx(Serial2, 9600, "FA", "MD", 2, 3, 11, 1);
+
 
 // CAT Modes
 String catModes[] = {"ERR", "LSB", "USB", "CW-U","FM","AM","DATA","CW-REV","DATA-REV"}; // ELECRAFT
+
 
 void initWiFi() {
   // Init WifiManager
@@ -78,18 +72,18 @@ boolean readPreferences() {
       String read_wl_radio = theSettings["radio"];
       String read_wl_rootCACertificate = theSettings["caCert"];
 
-      g_wl_url = read_wl_url;
-      g_wl_token = read_wl_token;
-      g_wl_radio = read_wl_radio;
-      g_wl_rootCACertificate = read_wl_rootCACertificate;
+      gWavelogURL = read_wl_url;
+      gWavelogToken = read_wl_token;
+      gWavelogRadio = read_wl_radio;
+      gWavelogCertificate = read_wl_rootCACertificate;
       
       String wl_rootCACertificateDisplay = read_wl_rootCACertificate;
       wl_rootCACertificateDisplay.replace("\n","\n\r");
 
-      logging("Prefs", "URL: "+g_wl_url);
-      logging("Prefs", "Token: "+g_wl_token);
-      logging("Prefs", "Radio: "+g_wl_radio);
-      logging("Prefs", "RootCA Cert: "+wl_rootCACertificateDisplay);
+      logging("Prefs", "URL: "+gWavelogURL);
+      logging("Prefs", "Token: "+gWavelogToken);
+      logging("Prefs", "Radio: "+gWavelogRadio);
+      logging("Prefs", "RootCA Cert: "+gWavelogCertificate);
       
       return true;
     } else {
@@ -131,13 +125,13 @@ void webSiteHome() {
   html += "<h1>WLBridge4TRX - Setup</h1>\n";
   html += "<form action='/update' method='post'>\n";
   html += "<label for='wl_URL'>Wavelog URL (with full path to radio API)</label><br>\n";
-  html += "<input type='text' id='wl_URL' name='wl_URL' value='"+g_wl_url+"'><br>\n";
+  html += "<input type='text' id='wl_URL' name='wl_URL' value='"+gWavelogURL+"'><br>\n";
   html += "<label for='wl_Token'>Wavelog Token</label><br>\n";
-  html += "<input type='text' id='wl_Token' name='wl_Token' value='"+g_wl_token+"'><br>\n";
+  html += "<input type='text' id='wl_Token' name='wl_Token' value='"+gWavelogToken+"'><br>\n";
   html += "<label for='wl_Radio'>Wavelog Radio Name</label><br>\n";
-  html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+g_wl_radio+"'><br>\n";
+  html += "<input type='text' id='wl_Radio' name='wl_Radio' value='"+gWavelogRadio+"'><br>\n";
   html += "<label for='wl_rootCACertificate'>Wavelog Root CA Certificate (Only for HTTPS)</label><br>\n";
-  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate'>"+g_wl_rootCACertificate+"</textarea><br>\n";
+  html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate'>"+gWavelogCertificate+"</textarea><br>\n";
   html += "<input type='submit' value='Update'>\n";
   html += "</form>\n";
   html += "<div class='version'>Version: "+String(VERSION_MAJOR)+"."+String(VERSION_MINOR)+" - <a href='http://github.com/zone11/WLBridge4TRX' target='blank'/>github.com/zone11/WLBridge4TRX</a></div>\n";
@@ -169,12 +163,12 @@ void webSiteUpdate() {
   html += "</body>\n";
   html += "</html>\n";
 
-  g_wl_url = server.arg("wl_URL");
-  g_wl_token = server.arg("wl_Token");
-  g_wl_radio = server.arg("wl_Radio");
-  g_wl_rootCACertificate = server.arg("wl_rootCACertificate");
+  gWavelogURL = server.arg("wl_URL");
+  gWavelogToken = server.arg("wl_Token");
+  gWavelogRadio = server.arg("wl_Radio");
+  gWavelogCertificate = server.arg("wl_rootCACertificate");
 
-  if (savePreferences(g_wl_url, g_wl_token, g_wl_radio, g_wl_rootCACertificate)) {
+  if (savePreferences(gWavelogURL, gWavelogToken, gWavelogRadio, gWavelogCertificate)) {
     server.send(200, "text/html", html);
     logging("HTTP","Saving config sucessfull, rebooting");
     delay(2000);
@@ -194,13 +188,13 @@ void TaskRadioUpdate(void *pvParameters) {
 
 void onRadioStateChanged(int freq, int mode) {
   logging("Radio", "Callback - Freq: " + String(freq) + ", Mode: " + String(mode));
-  cat_qrg = freq;
-  cat_mode = mode;
-  wl.sendQRG(g_wl_radio, catModes[mode], freq);
+  gRadioFrequency = freq;
+  gRadioMode = mode;
+  wl.sendQRG(gWavelogRadio, catModes[mode], freq);
 }
 
 void setup() {
-  // Init Serial (Debug) and Serial2 (CAT)
+  // Init Serial (Debug)
   Serial.begin(115200);
 
   // Init OLED and show splash
@@ -230,7 +224,7 @@ void setup() {
   initWiFi();
 
   // Prepare Wavelog
-  wl.init(g_wl_url, g_wl_token, g_wl_rootCACertificate);
+  wl.init(gWavelogURL, gWavelogToken, gWavelogCertificate);
 
   // Show acutal Infos on Display
   //displayInfos("booting",netIP,"Online "+wl.getVersion(),"USB",10, 14380);

@@ -1,5 +1,5 @@
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 1
+#define VERSION_MINOR 2
 #define LOGGING_SERIAL 1
 #define ENABLE_MDNS 1
 #define ENABLE_DISPLAY 1
