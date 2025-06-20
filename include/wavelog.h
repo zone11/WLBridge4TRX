@@ -102,8 +102,8 @@ class Wavelog {
 
     boolean sendQRG(String radio, String mode, unsigned long qrg) {
       String RequestData = "\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"";
-      DynamicJsonDocument doc(256);
-      if (callAPI("radio", RequestData, doc)) {
+      JsonDocument jsonRequest;
+      if (callAPI("radio", RequestData, jsonRequest)) {
         logging("WL", "API Call OK");
         return true;
       } else {
@@ -113,14 +113,14 @@ class Wavelog {
     }
 
     boolean getVersion() {
-      DynamicJsonDocument doc(256);
-      if (callAPI("version", "", doc) == false) {
+      JsonDocument jsonAnswer;
+      if (callAPI("version", "", jsonAnswer) == false) {
         logging("WL","API Call Error");
         return false;
       } else {
         // Parse version from JSON response
-        if (doc["version"].is<String>()) {
-          this->version = doc["version"].as<String>();
+        if (jsonAnswer["version"].is<String>()) {
+          this->version = jsonAnswer["version"].as<String>();
           logging("WL","Version: " + this->version);
         }
         return true;

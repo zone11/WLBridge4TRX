@@ -4,15 +4,23 @@
 
 class Radio {
   private:
-    HardwareSerial& serial; // Reference to the HardwareSerial object used for CAT communication
-    uint32_t baudRate; // Baud rate used for CAT communication
+    /** Reference to the serial interface used for CAT communication. */
+    HardwareSerial& serial;
+    /** Baud rate used for CAT communication. */
+    uint32_t baudRate;
 
-    String catFreqCommand;  // Command string to request frequency
-    String catModeCommand;   // Command string to request mode
-    int catFreqPosition;  // Position in the CAT response where frequency starts
-    int catModePosition;   // Position in the CAT response where mode starts
-    int catFreqLength;  // Length of the frequency value in the CAT response
-    int catModeLength;   // Length of the mode value in the CAT response
+    /** CAT command to request frequency. */
+    String catFreqCommand;
+    /** CAT command to request mode. */
+    String catModeCommand;
+    /** Start position of the frequency value in the CAT response. */
+    int catFreqPosition;
+    /** Start position of the mode value in the CAT response. */
+    int catModePosition;
+    /** Length of the frequency value in the CAT response. */
+    int catFreqLength;
+    /** Length of the mode value in the CAT response. */
+    int catModeLength;
 
     int currentFrequency = 0;
     int currentMode = 0;
@@ -34,7 +42,6 @@ class Radio {
     }
 
     void requestCatStatus() {
-        // logging("Radio", "Sending: " + catFreqCommand + ";" + catModeCommand + ";");
         serial.print(catFreqCommand + ";" + catModeCommand + ";");
     }
 
@@ -58,7 +65,7 @@ class Radio {
         do {
             foundSomething = false;
 
-            // Look for frequency command
+            // Check for frequency response
             String freqCmdSearch = ";" + catFreqCommand;
             char* qrgPos = strstr(buffer, freqCmdSearch.c_str());
             if (qrgPos && (size_t)(qrgPos - buffer + 1 + catFreqCommand.length() + catFreqLength) <= bufferLen) {
@@ -79,7 +86,7 @@ class Radio {
                 continue;
             }
 
-            // Look for mode command
+            // Check for mode response
             String modeCmdSearch = ";" + catModeCommand;
             char* mdPos = strstr(buffer, modeCmdSearch.c_str());
             if (mdPos && (size_t)(mdPos - buffer + 1 + catModeCommand.length() + catModeLength) <= bufferLen) {
@@ -102,6 +109,7 @@ class Radio {
 
         } while (foundSomething);
 
+        // Notify if frequency or mode changed
         if (changed) {
             currentFrequency = newFrequency;
             currentMode = newMode;
@@ -111,6 +119,7 @@ class Radio {
         }
     }
 
+    // Poll CAT interface and update internal state
     void pollCatInterface() {
         static bool toggle = false;
         processCatResponse();
