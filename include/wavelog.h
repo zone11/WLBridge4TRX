@@ -7,20 +7,23 @@ void sendToWavelog(unsigned long qrg, String mode, String radio, String url, Str
   String RequestData = "{\"key\":\"" + token + "\",\"radio\":\"" + radio + "\",\"frequency\":\"" + String(qrg) + "\",\"mode\":\"" + mode + "\"}";
   url.toLowerCase();
 
-  WiFiClientSecure *client_secure = new WiFiClientSecure;
-  WiFiClient *client = new WiFiClient(); 
+  WiFiClientSecure clientSecure;
+  WiFiClient clientPlain;
+  WiFiClient *client = nullptr;
   HTTPClient wl_request;
-  int clientOK;
+  int clientOK = 0;
 
   // HTTPS or not?
   if (url.startsWith("https://")) {
     // HTTPS
     logging("WL","Using HTTPS");
-    client_secure -> setCACert(caCert.c_str());
-    clientOK = wl_request.begin(*client_secure, url);
+    clientSecure.setCACert(caCert.c_str());
+    client = &clientSecure;
+    clientOK = wl_request.begin(*client, url);
   } else if(url.startsWith("http://")) {
     // HTTP
     logging("WL","Using HTTP");
+    client = &clientPlain;
     clientOK = wl_request.begin(*client, url);
   } else {
     logging("WL", "URL is missing the protocol (http/https): "+url);
@@ -44,5 +47,4 @@ void sendToWavelog(unsigned long qrg, String mode, String radio, String url, Str
     logging("WL","Unable to connect!");
   }
 
-  delete client;
 }
