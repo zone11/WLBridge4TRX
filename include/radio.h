@@ -66,10 +66,10 @@ class Radio {
             foundSomething = false;
 
             // Check for frequency response
-            String freqCmdSearch = ";" + catFreqCommand;
-            char* qrgPos = strstr(buffer, freqCmdSearch.c_str());
-            if (qrgPos && (size_t)(qrgPos - buffer + 1 + catFreqCommand.length() + catFreqLength) <= bufferLen) {
-                int start = (qrgPos - buffer) + 1 + catFreqCommand.length();
+            char* qrgPos = strstr(buffer, catFreqCommand.c_str());
+            if (qrgPos && ((qrgPos == buffer) || *(qrgPos - 1) == ';') &&
+                (size_t)(qrgPos - buffer + catFreqCommand.length() + catFreqLength) <= bufferLen) {
+                int start = (qrgPos - buffer) + catFreqCommand.length();
                 char temp[16] = {0};
                 strncpy(temp, &buffer[start], catFreqLength);
                 int parsedFreq = atoi(temp);
