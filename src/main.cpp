@@ -8,6 +8,7 @@
 #include <logging.h>
 #include <wavelog.h>
 #include <radio.h>
+#include <radio_cat.h>
 #include <display.h>
 
 
@@ -126,7 +127,7 @@ void webSiteHome() {
   html += "<div class=\"main\">\n";
   html += "<h1>WLBridge4TRX - Setup</h1>\n";
   html += "<form action='/update' method='post'>\n";
-  html += "<label for='wl_URL'>Wavelog URL (with full path to radio API)</label><br>\n";
+  html += "<label for='wl_URL'>Wavelog URL ( full path to the API)</label><br>\n";
   html += "<input type='text' id='wl_URL' name='wl_URL' value='"+gWavelogURL+"'><br>\n";
   html += "<label for='wl_Token'>Wavelog Token</label><br>\n";
   html += "<input type='text' id='wl_Token' name='wl_Token' value='"+gWavelogToken+"'><br>\n";
@@ -136,6 +137,8 @@ void webSiteHome() {
   html += "<textarea id='wl_rootCACertificate' name='wl_rootCACertificate'>"+gWavelogCertificate+"</textarea><br>\n";
   html += "<input type='submit' value='Update'>\n";
   html += "</form>\n";
+  html += "<h2> Debug </h2>\n";
+  html += "Frequency: "+String(gRadioFrequency/1000000.0 ,3)+" MHz / Mode:"+String(gRadioMode)+"\n";
   html += "<div class='version'>Version: "+cVersion+" - <a href='http://github.com/zone11/WLBridge4TRX' target='blank'/>github.com/zone11/WLBridge4TRX</a></div>\n";
   html += "</div>\n";
   html += "</body>\n";
